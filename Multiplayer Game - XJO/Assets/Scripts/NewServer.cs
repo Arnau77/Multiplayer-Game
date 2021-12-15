@@ -99,11 +99,28 @@ public class NewServer : MonoBehaviour
         ServerListening();
 
         //Send a message here to everyone to let know somebody has connected maybe?
+        Broadcast(guests[guests.Count-1].clientName + "has connected", guests);
     }
 
     private void OnIncomingData(ServerClient g, string data)
     {
         Debug.Log(g.clientName + " has sent the following data: " + data);
+    }
+    private void Broadcast(string data, List<ServerClient> cl)
+    {
+        foreach (ServerClient g in cl)
+        {
+            try
+            {
+                StreamWriter writer = new StreamWriter(g.tcp.GetStream());
+                writer.WriteLine(data);
+                writer.Flush();
+            }
+            catch(Exception e)
+            {
+                Debug.Log("Write error : " + e.Message + "to client " + g.clientName);
+            }
+        }
     }
 }
 

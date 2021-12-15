@@ -21,18 +21,18 @@ public class NewClient : MonoBehaviour
             return;
 
         string host = "127.0.0.1";
-        int port = 6162;
+        int port = 6163;
 
         string h;
         int p;
 
         //let the player decide the server and port to connect, if not we keep the default values
-        h = GameObject.Find("HostInput").GetComponent<InputField>().text;
-        if (h != "")
-            host = h;
-        int.TryParse(GameObject.Find("PortInput").GetComponent<InputField>().text, out p);
-        if (p != 0)
-            port = p;
+       //h = GameObject.Find("HostInput").GetComponent<InputField>().text;
+       //if (h != "")
+       //    host = h;
+       //int.TryParse(GameObject.Find("PortInput").GetComponent<InputField>().text, out p);
+       //if (p != 0)
+       //    port = p;
 
         try //we create the socket for connection
         {
