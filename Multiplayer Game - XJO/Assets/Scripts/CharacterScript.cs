@@ -7,28 +7,20 @@ public class CharacterScript : MonoBehaviour
     public Animator animator;
     public CharacterController controller;
     public float speed;
+    private Vector3 dir;
 
     enum STATE
     {
         SEARCH_STATE,
         IDLE,
-        WALK_LEFT,
-        WALK_RIGHT,
-        WALK_FORWARD,
-        WALK_BACK  
+        WALK
     }
     enum INPUT_STATE
     {
         IN_IDLE,
         IN_IDLE_END,
-        IN_WALK_LEFT,
-        IN_WALK_LEFT_END,
-        IN_WALK_RIGHT,
-        IN_WALK_RIGHT_END,
-        IN_WALK_FORWARD,
-        IN_WALK_FORWARD_END,
-        IN_WALK_BACK,
-        IN_WALK_BACK_END
+        IN_WALK,
+        IN_WALK_END
     }
 
     private STATE currentState = STATE.IDLE;
@@ -51,31 +43,17 @@ public class CharacterScript : MonoBehaviour
         UpdateState();
 
         Debug.Log(currentState.ToString());
+        Debug.Log(dir.ToString());
 
-        if (Input.GetKey(KeyCode.A))
-        {
-            
-        }
     }
 
     void ProcessInternalInput()
     {
-        if (Input.GetKey(KeyCode.A))
-        {
-            inputList.Add(INPUT_STATE.IN_WALK_LEFT);
-        }
-        if (Input.GetKey(KeyCode.D))
-        {
-            inputList.Add(INPUT_STATE.IN_WALK_RIGHT);
-        }
-        if (Input.GetKey(KeyCode.W))
-        {
-            inputList.Add(INPUT_STATE.IN_WALK_FORWARD);
-        }
-        if (Input.GetKey(KeyCode.S))
-        {
-            inputList.Add(INPUT_STATE.IN_WALK_BACK);
-        }
+        dir = new Vector3(Input.GetAxisRaw("Horizontal"), 0.0f, Input.GetAxisRaw("Vertical"));
+
+        if (dir == Vector3.zero) inputList.Add(INPUT_STATE.IN_IDLE);
+        else inputList.Add(INPUT_STATE.IN_WALK);
+
     }
 
     void ProcessExternalInput()
@@ -94,83 +72,14 @@ public class CharacterScript : MonoBehaviour
                 case STATE.IDLE:
                     switch (_input)
                     {
-                        case INPUT_STATE.IN_WALK_LEFT:
-                            currentState = STATE.WALK_LEFT;
-                            break;
-                        case INPUT_STATE.IN_WALK_RIGHT:
-                            currentState = STATE.WALK_RIGHT;
-                            break;
-                        case INPUT_STATE.IN_WALK_FORWARD:
-                            currentState = STATE.WALK_FORWARD;
-                            break;
-                        case INPUT_STATE.IN_WALK_BACK:
-                            currentState = STATE.WALK_BACK;
+                        case INPUT_STATE.IN_WALK:
+                            currentState = STATE.WALK;
                             break;
                     }
                     break;
-                case STATE.WALK_LEFT:
+                case STATE.WALK:
                     switch (_input)
                     {
-                        case INPUT_STATE.IN_IDLE:
-                            currentState = STATE.IDLE;
-                            break;
-                        case INPUT_STATE.IN_WALK_RIGHT:
-                            currentState = STATE.WALK_RIGHT;
-                            break;
-                        case INPUT_STATE.IN_WALK_FORWARD:
-                            currentState = STATE.WALK_FORWARD;
-                            break;
-                        case INPUT_STATE.IN_WALK_BACK:
-                            currentState = STATE.WALK_BACK;
-                            break;
-                    }
-                    break;
-                case STATE.WALK_RIGHT:
-                    switch (_input)
-                    {
-                        case INPUT_STATE.IN_WALK_LEFT:
-                            currentState = STATE.WALK_LEFT;
-                            break;
-                        case INPUT_STATE.IN_IDLE:
-                            currentState = STATE.IDLE;
-                            break;
-                        case INPUT_STATE.IN_WALK_FORWARD:
-                            currentState = STATE.WALK_FORWARD;
-                            break;
-                        case INPUT_STATE.IN_WALK_BACK:
-                            currentState = STATE.WALK_BACK;
-                            break;
-                    }
-                    break;
-                case STATE.WALK_FORWARD:
-                    switch (_input)
-                    {
-                        case INPUT_STATE.IN_WALK_LEFT:
-                            currentState = STATE.WALK_LEFT;
-                            break;
-                        case INPUT_STATE.IN_WALK_RIGHT:
-                            currentState = STATE.WALK_RIGHT;
-                            break;
-                        case INPUT_STATE.IN_IDLE:
-                            currentState = STATE.IDLE;
-                            break;
-                        case INPUT_STATE.IN_WALK_BACK:
-                            currentState = STATE.WALK_BACK;
-                            break;
-                    }
-                    break;
-                case STATE.WALK_BACK:
-                    switch (_input)
-                    {
-                        case INPUT_STATE.IN_WALK_LEFT:
-                            currentState = STATE.WALK_LEFT;
-                            break;
-                        case INPUT_STATE.IN_WALK_RIGHT:
-                            currentState = STATE.WALK_RIGHT;
-                            break;
-                        case INPUT_STATE.IN_WALK_FORWARD:
-                            currentState = STATE.WALK_FORWARD;
-                            break;
                         case INPUT_STATE.IN_IDLE:
                             currentState = STATE.IDLE;
                             break;
@@ -185,25 +94,15 @@ public class CharacterScript : MonoBehaviour
     {
         switch (currentState)
         {
-            case STATE.WALK_LEFT:
-                UpdateWalk(Vector3.left);
+            
+            case STATE.IDLE:
+                animator.Play("Fighting Idle");
                 break;
-            case STATE.WALK_RIGHT:
-                UpdateWalk(Vector3.right);
-                break;
-            case STATE.WALK_FORWARD:
-                UpdateWalk(Vector3.forward);
-                break;
-            case STATE.WALK_BACK:
-                UpdateWalk(Vector3.back);
+            case STATE.WALK:
+                animator.Play("Happy Walk");
+                controller.Move(dir * speed * Time.deltaTime);
                 break;
         }
-    }
-
-    void UpdateWalk(Vector3 dir)
-    {
-        animator.Play("Happy Walk");
-        controller.Move(dir * speed * Time.deltaTime);
     }
 
 }
