@@ -10,6 +10,8 @@ public class CharacterScript : MonoBehaviour
     private Vector3 dir;
     public int health;
     private bool beingHit = false;
+    public NewClient client;
+    private bool attack = false;
 
     enum STATE
     {
@@ -66,14 +68,26 @@ public class CharacterScript : MonoBehaviour
 
     void ProcessExternalInput()
     {
-        if (Input.GetKey(KeyCode.Y))
+        if (Input.GetKeyDown(KeyCode.Y) || attack)
         {
             inputList.Add(INPUT_STATE.IN_HIT);
             beingHit = true;
+            if (!attack)
+            {
+                client.SendInputMessageToServer(MessageClass.INPUT.Attack);
+            }
+            attack = false;
         }
-        if(beingHit && animator.GetCurrentAnimatorStateInfo(0).normalizedTime > 0.8f)
+        //else if (attack)
+        //{
+        //    inputList.Add(INPUT_STATE.IN_HIT);
+        //    beingHit = true;
+        //    attack = false;
+        //    Debug.Log("ATACK YES!!!!!!!!!!!!!!!!!!");
+        //}
+        if (beingHit && animator.GetCurrentAnimatorStateInfo(0).normalizedTime > 0.8f)
         {
-            inputList.Add(INPUT_STATE.IN_IDLE);
+            //inputList.Add(INPUT_STATE.IN_IDLE);
             beingHit = false;
         }
     }
@@ -137,6 +151,12 @@ public class CharacterScript : MonoBehaviour
                 animator.Play("Hit Reaction");
                 break;
         }
+    }
+
+    public void Attack()
+    {
+        attack = true;
+        Debug.LogWarning(System.DateTime.Now.Millisecond);
     }
 
 }

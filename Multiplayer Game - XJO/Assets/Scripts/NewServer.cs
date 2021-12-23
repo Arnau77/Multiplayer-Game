@@ -10,34 +10,47 @@ using System.Threading;
 
 public class NewServer : MonoBehaviour
 {
-    private List<ServerClient> guests; //keeps track of the connections
-    private List<ServerClient> disconnections; //keeps track of disconnections
+    private List<EndPoint> guests; //keeps track of the connections
+    private List<EndPoint> disconnections; //keeps track of disconnections
     private List<Action> actions = new List<Action>();
-    private List<string> textsToSend = new List<string>();
+    private List<TextWithID> textsToSend = new List<TextWithID>();
     private object actionLock;
     private object guestLock;
     private object textLock;
     private Thread serverListenThread;
     private Thread serverSendThread;
     private Socket server;
-    private static int maxID = 0;
-
+    //private static int maxID = 0;
+    public int maxPlayers;
+    private uint messageID = 0;
+    private bool morePlayersAllowed = true;
     public int port = 6162; //default port
 
     private bool serverconnected; //server started or not
 
-    //definition of who connects to the server
-    public class ServerClient
+    public class TextWithID
     {
-        public EndPoint remoteEP;
-        public int clientID;
-
-        public ServerClient(EndPoint clientsocket)
+        public string text;
+        public int id;
+        public TextWithID(string t, int i)
         {
-            clientID = maxID++;
-            remoteEP = clientsocket;
+            text = t;
+            id = i;
         }
     }
+
+    //definition of who connects to the server
+    //public class ServerClient
+    //{
+    //    public EndPoint remoteEP;
+    //    public int clientID;
+
+    //    public ServerClient(EndPoint clientsocket)
+    //    {
+    //        clientID = maxID++;
+    //        remoteEP = clientsocket;
+    //    }
+    //}
 
     private void Start()
     {
@@ -46,8 +59,8 @@ public class NewServer : MonoBehaviour
         textLock = new object();
 
 
-        guests = new List<ServerClient>();
-        disconnections = new List<ServerClient>();
+        guests = new List<EndPoint>();
+        disconnections = new List<EndPoint>();
         server = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         serverListenThread = new Thread(ServerListenThread);
         serverSendThread = new Thread(ServerSendThread);
@@ -56,6 +69,7 @@ public class NewServer : MonoBehaviour
 
         serverListenThread.Start();
         serverSendThread.Start();
+
     }
     private void Update()
     {
@@ -114,15 +128,58 @@ public class NewServer : MonoBehaviour
         {
             //we make the connection with the client and it sends a message, we decode it and if its "ping" the message we proceed to make an output
             int size = server.ReceiveFrom(buffer, ref clientPoint);
-            lock (guestLock)
+            MessageClass messageReceived = new MessageClass(Encoding.ASCII.GetString(buffer));
+            int id = guests.FindIndex(client => client.Equals(clientPoint));
+            switch (messageReceived.typeOfMessage)
             {
-                int id = guests.FindIndex(client => client.remoteEP == clientPoint);
-                if (id == -1)
-                {
-                    guests.Add(new ServerClient(clientPoint));
-                }
+                case MessageClass.TYPEOFMESSAGE.Connection:
+                    if (morePlayersAllowed && id==-1)
+                    {
+                        lock (guestLock)
+                        {
+                            guests.Add(clientPoint);
+                            id = guests.Count;
+                        }
+                        if (id-- >= maxPlayers)
+                        {
+                            morePlayersAllowed = false;
+                        }
+                        Debug.Log("NEwwW CLIENT");
+                        lock (textLock)
+                        {
+                            MessageClass message = new MessageClass(messageID++, id, MessageClass.TYPEOFMESSAGE.Connection, System.DateTime.Now);
+                            textsToSend.Add(new TextWithID(message.Serialize(),id));
+                        }
+                    }
+                    break;
+                case MessageClass.TYPEOFMESSAGE.Input:
+                    List<EndPoint> localClients=new List<EndPoint>();
+
+                    lock (guestLock)
+                    {
+                        for(int i = 0; i < guests.Count; i++)
+                        {
+                            localClients.Add(guests[i]);
+                        }
+                    }
+                    for (int i = 0; i < localClients.Count; i++)
+                    {
+                        if (i == id)
+                        {
+                            continue;
+                        }
+                        lock (textLock)
+                        {
+                            MessageClass message = new MessageClass(messageID++, id, MessageClass.TYPEOFMESSAGE.Input, System.DateTime.Now,MessageClass.INPUT.Attack);
+                            textsToSend.Add(new TextWithID(message.Serialize(), i));
+                        }
+                    }
+                    localClients.Clear();
+
+
+                    break;
             }
-            //Debug.Log(Encoding.ASCII.GetString(buffer));
+            Debug.Log(Encoding.ASCII.GetString(buffer));
 
 
         }
@@ -130,32 +187,35 @@ public class NewServer : MonoBehaviour
 
     void ServerSendThread()
     {
-        List<string> localTexts;
-        List<ServerClient> localClients;
+        List<TextWithID> localTexts = new List<TextWithID>();
+        List<EndPoint> localClients = new List<EndPoint>();
         byte[] buffer;
 
         while (true)
         {
             lock (textLock)
             {
-                localTexts = textsToSend;
+                for (int i = 0; i < textsToSend.Count; i++)
+                {
+                    localTexts.Add(textsToSend[i]);
+                }
                 textsToSend.Clear();
             }
             lock (guestLock)
             {
-                localClients = guests;
+                for (int i = 0; i < guests.Count; i++)
+                {
+                    localClients.Add(guests[i]);
+                }
             }
 
             for (int i = 0; i < localTexts.Count; i++)
             {
-                buffer = Encoding.ASCII.GetBytes(localTexts[i]);
-
-
-                for (int j = 0; j < localClients.Count; j++)
-                {
-                    server.SendTo(buffer, buffer.Length, SocketFlags.None, localClients[j].remoteEP);
-                }
+                buffer = Encoding.ASCII.GetBytes(localTexts[i].text);
+                server.SendTo(buffer, buffer.Length, SocketFlags.None, localClients[localTexts[i].id]);
             }
+            localTexts.Clear();
+            localClients.Clear();
         }
 
     }
@@ -219,8 +279,8 @@ public class NewServer : MonoBehaviour
 
     private void OnDestroy()
     {
-        server.Close();
         serverListenThread.Abort();
         serverSendThread.Abort();
+        server.Close();
     }
 }

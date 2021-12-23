@@ -22,22 +22,38 @@ public class NewClient : MonoBehaviour
     private Thread clientSendThread;
     private StreamWriter writter;
     private StreamReader reader;
+    private bool firstMessageSent = false;
+    private bool connected = false;
+    private uint messageID = 0;
+    private int clientID;
+
+    //TEMPORAL!!!!!!!!!!!!!!!!
+    public CharacterScript characterScript;
 
     void Start()
     {
         actionLock = new object();
         textLock = new object();
+        MessageClass message = new MessageClass(messageID++, -1, MessageClass.TYPEOFMESSAGE.Connection, System.DateTime.Now);
+        textsToSend.Add(message.Serialize());
+        //TODO: WARNING!!!!!!! THIS LINE WILL HAVE TO PROBABLY BE REMOVED LATER, WHEN HAVING THE LOBBY
+        ConnectToServer();
     }
     public void ConnectToServer()
     {
+        if (connected)
+        {
+            return;
+        }
+        connected = true;
         socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         ipDestination = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 6162);
         serverPoint = new IPEndPoint(IPAddress.Any, 0);
         clientListenThread = new Thread(ClientListenThread);
         clientSendThread = new Thread(ClientSendThread);
 
-        clientListenThread.Start();
         clientSendThread.Start();
+        clientListenThread.Start();
     }
 
     private void Update()
@@ -67,21 +83,26 @@ public class NewClient : MonoBehaviour
     void ClientSendThread()
     {
         byte[] buffer;
-        List<string> localTexts;
+        List<string> localTexts =new List<string>();
        
         while (true)
         {
             lock (textLock)
             {
-                localTexts = textsToSend;
+                for(int i = 0; i < textsToSend.Count; i++)
+                {
+                    localTexts.Add(textsToSend[i]);
+                }
                 textsToSend.Clear();
             }
             for (int i = 0; i < localTexts.Count; i++)
             {
                 buffer = Encoding.ASCII.GetBytes(localTexts[i]);
                 socket.SendTo(buffer, buffer.Length, SocketFlags.None, ipDestination);
+                firstMessageSent = true;
 
             }
+            localTexts.Clear();
 
 
         }
@@ -90,10 +111,25 @@ public class NewClient : MonoBehaviour
     void ClientListenThread()
     {
         byte[] buffer = new byte[100];
-
-        socket.ReceiveFrom(buffer, ref serverPoint);
-
-        Debug.Log(Encoding.ASCII.GetString(buffer));
+        Socket socket2 = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        while (true)
+        {
+            if (firstMessageSent)
+            {
+                socket.ReceiveFrom(buffer, ref serverPoint);
+                MessageClass messageReceived = new MessageClass(Encoding.ASCII.GetString(buffer));
+                switch (messageReceived.typeOfMessage)
+                {
+                    case MessageClass.TYPEOFMESSAGE.Input:
+                        if (messageReceived.input == MessageClass.INPUT.Attack)
+                        {
+                            characterScript.Attack();
+                        }
+                        break;
+                }
+                Debug.Log(Encoding.ASCII.GetString(buffer));
+            }
+        }
     }
 
     private void OnIncomingData(string data)
@@ -101,11 +137,20 @@ public class NewClient : MonoBehaviour
         Debug.Log("Server : " + data);
     }
 
+    public void SendInputMessageToServer(MessageClass.INPUT messageInput)
+    {
+        lock (textLock)
+        {
+            MessageClass message = new MessageClass(messageID++, clientID, MessageClass.TYPEOFMESSAGE.Input, System.DateTime.Now, messageInput);
+            textsToSend.Add(message.Serialize());
+        }
+    }
+
     private void OnDestroy()
     {
-        socket.Close();
         clientSendThread.Abort();
         clientListenThread.Abort();
+        socket.Close();
     }
 
 }
