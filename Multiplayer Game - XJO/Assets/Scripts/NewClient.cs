@@ -180,6 +180,20 @@ public class NewClient : MonoBehaviour
                             characterScript.Attack();
                         }
                         break;
+                    case MessageClass.TYPEOFMESSAGE.Connection:
+                        clientID = messageReceived.playerID;
+                        break;
+                }
+                if (messageReceived.typeOfMessage != MessageClass.TYPEOFMESSAGE.Connection)
+                {
+                    lock (textLock)
+                    {
+                        MessageClass message = new MessageClass(messageReceived.id, messageReceived.playerID, MessageClass.TYPEOFMESSAGE.Acknoledgment, DateTime.Now);
+                        for(int i = 0; i < 3; i++)
+                        {
+                            textsToSend.Add(new MessageWithPossibleJitter(message.Serialize()));
+                        }
+                    }
                 }
                 Debug.Log(Encoding.ASCII.GetString(buffer));
             }
