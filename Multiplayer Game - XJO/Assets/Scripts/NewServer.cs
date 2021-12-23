@@ -14,6 +14,7 @@ public class NewServer : MonoBehaviour
     private List<EndPoint> disconnections; //keeps track of disconnections
     private List<Action> actions = new List<Action>();
     private List<TextWithID> textsToSend = new List<TextWithID>();
+    private List<TextWithID> backupTexts = new List<TextWithID>();
     private object actionLock;
     private object guestLock;
     private object textLock;
@@ -25,6 +26,11 @@ public class NewServer : MonoBehaviour
     private uint messageID = 0;
     private bool morePlayersAllowed = true;
     public int port = 6162; //default port
+    public bool packetLoss = false;
+    public bool jitter = false;
+    public int lossThreshold = 90;
+    public int minJitt = 0;
+    public int maxJitt = 800;
 
     private bool serverconnected; //server started or not
 
@@ -32,10 +38,14 @@ public class NewServer : MonoBehaviour
     {
         public string text;
         public int id;
+        public DateTime timeToSendMessage;
+        public bool jitterApplied;
         public TextWithID(string t, int i)
         {
             text = t;
             id = i;
+            timeToSendMessage = DateTime.Now;
+            jitterApplied = false;
         }
     }
 
@@ -85,6 +95,14 @@ public class NewServer : MonoBehaviour
                 Action action = actions[0];
                 actions.RemoveAt(0);
                 action();
+            }
+        }
+        if (Input.GetKeyDown(KeyCode.N))
+        {
+            lock (textLock)
+            {
+                MessageClass message = new MessageClass(messageID++, 0, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now);
+                textsToSend.Add(new TextWithID(message.Serialize(),0));
             }
         }
 
@@ -147,20 +165,16 @@ public class NewServer : MonoBehaviour
                         Debug.Log("NEwwW CLIENT");
                         lock (textLock)
                         {
-                            MessageClass message = new MessageClass(messageID++, id, MessageClass.TYPEOFMESSAGE.Connection, System.DateTime.Now);
+                            MessageClass message = new MessageClass(messageID++, id, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now);
                             textsToSend.Add(new TextWithID(message.Serialize(),id));
                         }
                     }
                     break;
                 case MessageClass.TYPEOFMESSAGE.Input:
-                    List<EndPoint> localClients=new List<EndPoint>();
-
+                    List<EndPoint> localClients;
                     lock (guestLock)
                     {
-                        for(int i = 0; i < guests.Count; i++)
-                        {
-                            localClients.Add(guests[i]);
-                        }
+                        localClients = new List<EndPoint>(guests);
                     }
                     for (int i = 0; i < localClients.Count; i++)
                     {
@@ -170,7 +184,7 @@ public class NewServer : MonoBehaviour
                         }
                         lock (textLock)
                         {
-                            MessageClass message = new MessageClass(messageID++, id, MessageClass.TYPEOFMESSAGE.Input, System.DateTime.Now,MessageClass.INPUT.Attack);
+                            MessageClass message = new MessageClass(messageID++, id, MessageClass.TYPEOFMESSAGE.Input, DateTime.Now,MessageClass.INPUT.Attack);
                             textsToSend.Add(new TextWithID(message.Serialize(), i));
                         }
                     }
@@ -187,30 +201,51 @@ public class NewServer : MonoBehaviour
 
     void ServerSendThread()
     {
-        List<TextWithID> localTexts = new List<TextWithID>();
-        List<EndPoint> localClients = new List<EndPoint>();
+        List<TextWithID> localTexts;
+        List<EndPoint> localClients;
+        System.Random r = new System.Random();
         byte[] buffer;
 
         while (true)
         {
             lock (textLock)
             {
-                for (int i = 0; i < textsToSend.Count; i++)
-                {
-                    localTexts.Add(textsToSend[i]);
-                }
+                localTexts = new List<TextWithID>(textsToSend);
                 textsToSend.Clear();
+            }
+            if (backupTexts.Count > 0)
+            {
+                localTexts.AddRange(backupTexts);
+                backupTexts.Clear();
             }
             lock (guestLock)
             {
-                for (int i = 0; i < guests.Count; i++)
-                {
-                    localClients.Add(guests[i]);
-                }
+                localClients = new List<EndPoint>(guests);                
             }
+
 
             for (int i = 0; i < localTexts.Count; i++)
             {
+                //HERE WE WILL WORK WITH PACKET LOSS AND JITTER
+                if (!localTexts[i].jitterApplied)
+                {
+                    //FIRST PACKET LOSS
+                    if (packetLoss && r.Next(0, 100) <= lossThreshold)
+                    {
+                        continue;
+                    }
+                    //THEN JITTER
+                    if (jitter)
+                    {
+                        localTexts[i].timeToSendMessage = DateTime.Now.AddMilliseconds(r.Next(minJitt, maxJitt));
+                    }
+                    localTexts[i].jitterApplied = true;
+                }
+                if (localTexts[i].timeToSendMessage > DateTime.Now)
+                {
+                    backupTexts.Add(localTexts[i]);
+                    continue;
+                }
                 buffer = Encoding.ASCII.GetBytes(localTexts[i].text);
                 server.SendTo(buffer, buffer.Length, SocketFlags.None, localClients[localTexts[i].id]);
             }

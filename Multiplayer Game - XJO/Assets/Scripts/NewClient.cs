@@ -14,7 +14,8 @@ public class NewClient : MonoBehaviour
     private IPEndPoint ipDestination;
     private EndPoint serverPoint;
     private Socket socket;
-    private List<string> textsToSend = new List<string>();
+    private List<MessageWithPossibleJitter> textsToSend = new List<MessageWithPossibleJitter>();
+    private List<MessageWithPossibleJitter> backupTexts = new List<MessageWithPossibleJitter>();
     private List<Action> actions = new List<Action>();
     private object actionLock;
     private object textLock;
@@ -27,15 +28,34 @@ public class NewClient : MonoBehaviour
     private uint messageID = 0;
     private int clientID;
 
+    public bool packetLoss = false;
+    public bool jitter = false;
+    public int lossThreshold = 90;
+    public int minJitt = 0;
+    public int maxJitt = 800;
+
     //TEMPORAL!!!!!!!!!!!!!!!!
     public CharacterScript characterScript;
 
+
+    public class MessageWithPossibleJitter
+    {
+        public string text;
+        public DateTime timeToSendMessage;
+        public bool jitterApplied;
+        public MessageWithPossibleJitter(string t)
+        {
+            text = t;
+            timeToSendMessage = DateTime.Now;
+            jitterApplied = false;
+        }
+    }
     void Start()
     {
         actionLock = new object();
         textLock = new object();
-        MessageClass message = new MessageClass(messageID++, -1, MessageClass.TYPEOFMESSAGE.Connection, System.DateTime.Now);
-        textsToSend.Add(message.Serialize());
+        MessageClass message = new MessageClass(messageID++, -1, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now);
+        textsToSend.Add(new MessageWithPossibleJitter(message.Serialize()));
         //TODO: WARNING!!!!!!! THIS LINE WILL HAVE TO PROBABLY BE REMOVED LATER, WHEN HAVING THE LOBBY
         ConnectToServer();
     }
@@ -67,6 +87,14 @@ public class NewClient : MonoBehaviour
                 action();
             }
         }
+        if (Input.GetKeyDown(KeyCode.M))
+        {
+            lock (textLock)
+            {
+                MessageClass message = new MessageClass(messageID++, -1, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now);
+                textsToSend.Add(new MessageWithPossibleJitter(message.Serialize()));
+            }
+        }
         //if (socketReady)
         //{
         //    if (stream.DataAvailable)
@@ -83,24 +111,49 @@ public class NewClient : MonoBehaviour
     void ClientSendThread()
     {
         byte[] buffer;
-        List<string> localTexts =new List<string>();
-       
+        List<MessageWithPossibleJitter> localTexts;
+        System.Random r = new System.Random();
+
         while (true)
         {
             lock (textLock)
             {
-                for(int i = 0; i < textsToSend.Count; i++)
-                {
-                    localTexts.Add(textsToSend[i]);
-                }
+                localTexts = new List<MessageWithPossibleJitter>(textsToSend);
                 textsToSend.Clear();
+            }
+            if (backupTexts.Count > 0)
+            {
+                localTexts.AddRange(backupTexts);
+                backupTexts.Clear();
             }
             for (int i = 0; i < localTexts.Count; i++)
             {
-                buffer = Encoding.ASCII.GetBytes(localTexts[i]);
+
+                //HERE WE WILL WORK WITH PACKET LOSS AND JITTER
+                if (!localTexts[i].jitterApplied)
+                {
+                    //FIRST PACKET LOSS
+                    if (packetLoss && r.Next(0, 100) <= lossThreshold)
+                    {
+                        continue;
+                    }
+                    //THEN JITTER
+                    if (jitter)
+                    {
+                        localTexts[i].timeToSendMessage = DateTime.Now.AddMilliseconds(r.Next(minJitt, maxJitt));
+
+                    }
+
+                    localTexts[i].jitterApplied = true;
+                }
+                if (localTexts[i].timeToSendMessage > DateTime.Now)
+                {
+                    backupTexts.Add(localTexts[i]);
+                    continue;
+                }
+                buffer = Encoding.ASCII.GetBytes(localTexts[i].text);
                 socket.SendTo(buffer, buffer.Length, SocketFlags.None, ipDestination);
                 firstMessageSent = true;
-
             }
             localTexts.Clear();
 
@@ -141,8 +194,8 @@ public class NewClient : MonoBehaviour
     {
         lock (textLock)
         {
-            MessageClass message = new MessageClass(messageID++, clientID, MessageClass.TYPEOFMESSAGE.Input, System.DateTime.Now, messageInput);
-            textsToSend.Add(message.Serialize());
+            MessageClass message = new MessageClass(messageID++, clientID, MessageClass.TYPEOFMESSAGE.Input, DateTime.Now, messageInput);
+            textsToSend.Add(new MessageWithPossibleJitter(message.Serialize()));
         }
     }
 
