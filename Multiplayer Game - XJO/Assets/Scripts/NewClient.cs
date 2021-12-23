@@ -91,7 +91,8 @@ public class NewClient : MonoBehaviour
         {
             lock (textLock)
             {
-                MessageClass message = new MessageClass(messageID++, -1, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now);
+                int[,] list = { { 1, 0 }, { 2, 1 }, { 3, 2 } };
+                MessageClass message = new MessageClass(messageID++, -1, MessageClass.TYPEOFMESSAGE.MessagesNeeded, DateTime.Now,list);
                 textsToSend.Add(new MessageWithPossibleJitter(message.Serialize()));
             }
         }

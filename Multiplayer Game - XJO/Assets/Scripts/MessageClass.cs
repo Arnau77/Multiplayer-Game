@@ -7,7 +7,8 @@ public class MessageClass
         Connection,
         Disconnection,
         CharacterUpdate,
-        WorldUpdate
+        WorldUpdate,
+        MessagesNeeded
     }
 
     public enum INPUT
@@ -35,6 +36,7 @@ public class MessageClass
     public INPUT input;
     public int objectID;
     public System.DateTime time;
+    int[,] messagesNeeded;
     //public OBJECTUPDATE objectUpdate;
 
     public MessageClass(uint i, int pi, TYPEOFMESSAGE type, System.DateTime t)
@@ -64,6 +66,15 @@ public class MessageClass
         //objectUpdate = ou;
     }
 
+    public MessageClass(uint i, int pi, TYPEOFMESSAGE type, System.DateTime t, int[,] needed)
+    {
+        id = i;
+        playerID = pi;
+        typeOfMessage = type;
+        time = t;
+        messagesNeeded = needed;
+    }
+
     public MessageClass(string str)
     {
         string[] info= str.Split('#');
@@ -78,6 +89,17 @@ public class MessageClass
                 break;
             case TYPEOFMESSAGE.WorldUpdate:
                 objectID = int.Parse(info[4]);
+                break;
+            case TYPEOFMESSAGE.MessagesNeeded:
+                string[] numbers = info[4].Split(';');
+                string[] specificNumbers;
+                messagesNeeded = new int[numbers.Length,2];
+                for(int i = 0; i < numbers.Length; i++)
+                {
+                    specificNumbers = numbers[i].Split(',');
+                    messagesNeeded[i, 0] = int.Parse(specificNumbers[0]);
+                    messagesNeeded[i, 1] = int.Parse(specificNumbers[1]);
+                }
                 break;
             default:
                 break;
@@ -94,6 +116,20 @@ public class MessageClass
                 break;
             case TYPEOFMESSAGE.WorldUpdate:
                 info = '#' + objectID.ToString();
+                break;
+            case TYPEOFMESSAGE.MessagesNeeded:
+                string numbers="";
+                for(int i = 0; i < messagesNeeded.Length/2; i++)
+                {
+                    if (i > 0)
+                    {
+                        numbers += ';';
+                    }
+                    numbers += messagesNeeded[i, 0];
+                    numbers += ',';
+                    numbers+= messagesNeeded[i, 1];
+                }
+                info = '#' + numbers;
                 break;
             default:
                 info = "";

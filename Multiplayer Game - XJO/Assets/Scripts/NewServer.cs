@@ -23,7 +23,6 @@ public class NewServer : MonoBehaviour
     private Socket server;
     //private static int maxID = 0;
     public int maxPlayers;
-    private uint messageID = 0;
     private bool morePlayersAllowed = true;
     public int port = 6162; //default port
     public bool packetLoss = false;
@@ -101,7 +100,7 @@ public class NewServer : MonoBehaviour
         {
             lock (textLock)
             {
-                MessageClass message = new MessageClass(messageID++, 0, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now);
+                MessageClass message = new MessageClass(0, 0, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now);
                 textsToSend.Add(new TextWithID(message.Serialize(),0));
             }
         }
@@ -165,7 +164,7 @@ public class NewServer : MonoBehaviour
                         Debug.Log("NEwwW CLIENT");
                         lock (textLock)
                         {
-                            MessageClass message = new MessageClass(messageID++, id, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now);
+                            MessageClass message = new MessageClass(messageReceived.id, id, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now);
                             textsToSend.Add(new TextWithID(message.Serialize(),id));
                         }
                     }
@@ -184,7 +183,7 @@ public class NewServer : MonoBehaviour
                         }
                         lock (textLock)
                         {
-                            MessageClass message = new MessageClass(messageID++, id, MessageClass.TYPEOFMESSAGE.Input, DateTime.Now,MessageClass.INPUT.Attack);
+                            MessageClass message = new MessageClass(messageReceived.id, id, MessageClass.TYPEOFMESSAGE.Input, DateTime.Now,MessageClass.INPUT.Attack);
                             textsToSend.Add(new TextWithID(message.Serialize(), i));
                         }
                     }
