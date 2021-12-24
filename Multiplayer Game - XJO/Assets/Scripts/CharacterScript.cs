@@ -263,6 +263,7 @@ public class CharacterScript : MonoBehaviour
             health = 0;
             Debug.Log("Died");
         }
+        animator.SetTrigger("HeadHit");
     }
 
     public void CheckDamage()
@@ -275,7 +276,7 @@ public class CharacterScript : MonoBehaviour
             {
                 character.ReceiveDamage();
                 Debug.Log("Hitted");
-
+                StartCoroutine(PushedBack(character));
             }
         }
         
@@ -284,6 +285,18 @@ public class CharacterScript : MonoBehaviour
     private void OnDrawGizmos()
     {
         Gizmos.DrawWireSphere(castDamagePoint.position,hitRadius);
+    }
+
+    IEnumerator PushedBack(CharacterScript character)
+    {
+        float time = 0.05f;
+        float impulse = 0.1f;
+        while(time > 0)
+        {
+            time -= Time.deltaTime;
+            character.controller.Move(transform.forward * impulse);
+            yield return null;
+        }
     }
 
 }
