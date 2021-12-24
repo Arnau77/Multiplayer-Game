@@ -247,13 +247,12 @@ public class NewClient : MonoBehaviour
                 }
             }
         }
-        else
-        {
-            foreach (var id in messagesLost)
-            {
-
-            }
-        }
+        //else
+        //{
+        //    foreach (var id in messagesLost)
+        //    {
+        //    }
+        //}
         else if (sizeList == 1)
         {
             if (messagesLost.ContainsKey(idMessage - 1))
