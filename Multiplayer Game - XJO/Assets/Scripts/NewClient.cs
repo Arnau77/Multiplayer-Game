@@ -91,7 +91,7 @@ public class NewClient : MonoBehaviour
         }
         if (Input.GetKeyDown(KeyCode.M))
         {
-            MessageClass message = new MessageClass(messageID++, -1, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now);
+            MessageClass message = new MessageClass(messageID++, clientID, MessageClass.TYPEOFMESSAGE.Disconnection, DateTime.Now);
             lock (textLock)
             {
                 textsToSend.Add(new MessageWithPossibleJitter(message.Serialize()));
@@ -134,9 +134,11 @@ public class NewClient : MonoBehaviour
                 //HERE WE WILL WORK WITH PACKET LOSS AND JITTER
                 if (!localTexts[i].jitterApplied)
                 {
+                    int rs = r.Next(0, 100);
                     //FIRST PACKET LOSS
-                    if (packetLoss && r.Next(0, 100) <= lossThreshold)
+                    if (packetLoss && rs <= lossThreshold)
                     {
+                        Debug.LogWarning("Message Lost: " + rs);
                         continue;
                     }
                     //THEN JITTER
@@ -166,13 +168,13 @@ public class NewClient : MonoBehaviour
     void ClientListenThread()
     {
         byte[] buffer = new byte[100];
-        Socket socket2 = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         while (true)
         {
             if (firstMessageSent)
             {
                 socket.ReceiveFrom(buffer, ref serverPoint);
                 MessageClass messageReceived = new MessageClass(Encoding.ASCII.GetString(buffer));
+                bool checkIfThereAreMessagesLost = true;
                 switch (messageReceived.typeOfMessage)
                 {
                     case MessageClass.TYPEOFMESSAGE.Input:
@@ -190,18 +192,21 @@ public class NewClient : MonoBehaviour
                     case MessageClass.TYPEOFMESSAGE.Connection:
                         clientID = messageReceived.playerID;
                         break;
+                    case MessageClass.TYPEOFMESSAGE.Acknowledgment:
+                        checkIfThereAreMessagesLost = false;
+                        break;
+                    case MessageClass.TYPEOFMESSAGE.MessagesNeeded:
+                        checkIfThereAreMessagesLost = false;
+                        break;
                 }
-                if (messageReceived.typeOfMessage != MessageClass.TYPEOFMESSAGE.Connection || messageReceived.typeOfMessage!=MessageClass.TYPEOFMESSAGE.Acknowledgment)
+
+                int index = messageReceived.playerID;
+                List<MessageClass> newMessages= MessageClass.CheckIfThereAreMessagesLost(ref listOfMessagesReceived, ref listOfMessagesNeeded, messageReceived, index,checkIfThereAreMessagesLost);
+                for(int i = 0; newMessages != null && i < newMessages.Count; i++)
                 {
-                    int index = messageReceived.playerID;
-                    
-                    List<MessageClass> newMessages= MessageClass.CheckIfThereAreMessagesLost(ref listOfMessagesReceived, ref listOfMessagesNeeded, messageReceived, index);
-                    for(int i = 0; i < newMessages.Count; i++)
+                    lock (textLock)
                     {
-                        lock (textLock)
-                        {
-                            textsToSend.Add(new MessageWithPossibleJitter(newMessages[i].Serialize()));
-                        }
+                        textsToSend.Add(new MessageWithPossibleJitter(newMessages[i].Serialize()));
                     }
                 }
                 Debug.Log(Encoding.ASCII.GetString(buffer));

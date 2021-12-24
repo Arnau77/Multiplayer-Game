@@ -15,6 +15,8 @@ public class NewServer : MonoBehaviour
     private List<Action> actions = new List<Action>();
     private List<TextWithID> textsToSend = new List<TextWithID>();
     private List<TextWithID> backupTexts = new List<TextWithID>();
+    private Dictionary<int, uint> listOfMessagesReceived = new Dictionary<int, uint>();
+    private Dictionary<int, List<uint>> listOfMessagesNeeded = new Dictionary<int, List<uint>>();
     private object actionLock;
     private object guestLock;
     private object textLock;
@@ -100,7 +102,7 @@ public class NewServer : MonoBehaviour
         {
             lock (textLock)
             {
-                MessageClass message = new MessageClass(0, 0, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now);
+                MessageClass message = new MessageClass(0, 0, MessageClass.TYPEOFMESSAGE.Disconnection, DateTime.Now);
                 textsToSend.Add(new TextWithID(message.Serialize(),0));
             }
         }
@@ -147,6 +149,7 @@ public class NewServer : MonoBehaviour
             int size = server.ReceiveFrom(buffer, ref clientPoint);
             MessageClass messageReceived = new MessageClass(Encoding.ASCII.GetString(buffer));
             int id = guests.FindIndex(client => client.Equals(clientPoint));
+            bool checkIfThereAreMessagesLost = true;
             switch (messageReceived.typeOfMessage)
             {
                 case MessageClass.TYPEOFMESSAGE.Connection:
@@ -168,6 +171,7 @@ public class NewServer : MonoBehaviour
                             textsToSend.Add(new TextWithID(message.Serialize(),id));
                         }
                     }
+                    checkIfThereAreMessagesLost = false;
                     break;
                 case MessageClass.TYPEOFMESSAGE.Input:
                     List<EndPoint> localClients;
@@ -188,9 +192,22 @@ public class NewServer : MonoBehaviour
                         }
                     }
                     localClients.Clear();
-
-
                     break;
+                case MessageClass.TYPEOFMESSAGE.Acknowledgment:
+                    checkIfThereAreMessagesLost = false;
+                    break;
+                case MessageClass.TYPEOFMESSAGE.MessagesNeeded:
+                    checkIfThereAreMessagesLost = false;
+                    break;
+            }
+            int index = messageReceived.playerID;
+            List<MessageClass> newMessages = MessageClass.CheckIfThereAreMessagesLost(ref listOfMessagesReceived, ref listOfMessagesNeeded, messageReceived, index, checkIfThereAreMessagesLost);
+            for (int i = 0; newMessages!=null && i < newMessages.Count; i++)
+            {
+                lock (textLock)
+                {
+                    textsToSend.Add(new TextWithID(newMessages[i].Serialize(),id));
+                }
             }
             //Debug.Log(Encoding.ASCII.GetString(buffer));
 

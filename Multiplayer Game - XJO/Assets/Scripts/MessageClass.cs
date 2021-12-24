@@ -89,6 +89,7 @@ public class MessageClass
 
     public MessageClass(string str)
     {
+        str = str.TrimEnd('\0');
         string[] info= str.Split('#');
         id = uint.Parse(info[0]);
         playerID = int.Parse(info[1]);
@@ -144,17 +145,20 @@ public class MessageClass
                 string numbers="";
                 foreach(var number in messagesNeeded)
                 {
+                    if (number.Value.Count <= 0)
+                    {
+                        continue;
+                    }
                     if (!firstNumber)
                     {
                         numbers += ';';
                     }
                     numbers += number.Key;
-                    numbers += ',';
                     foreach(var ids in number.Value)
                     {
+                        numbers += ',';
                         numbers += ids;
                     }
-                    numbers += number.Key;
                     firstNumber = false;
                 }
                 info = '#' + numbers;
@@ -163,12 +167,16 @@ public class MessageClass
                 info = "";
                 break;
         }
-        return id.ToString() + '#' + playerID.ToString() + '#' + typeOfMessage.ToString("d") + '#' + time.ToString() + info;
+        return id.ToString() + '#' + playerID.ToString() + '#' + typeOfMessage.ToString("d") + '#' + time.ToString() + info + '#';
     }
 
-    public static List<MessageClass> CheckIfThereAreMessagesLost(ref Dictionary<int, uint> listOfMessages, ref Dictionary<int, List<uint>> fullListOfMessagesLost, MessageClass message, int index)
+    public static List<MessageClass> CheckIfThereAreMessagesLost(ref Dictionary<int, uint> listOfMessages, ref Dictionary<int, List<uint>> fullListOfMessagesLost, MessageClass message, int index, bool sendMessage)
     {
         uint lastMessageID;
+        if (!fullListOfMessagesLost.ContainsKey(index))
+        {
+            fullListOfMessagesLost.Add(index, new List<uint>());
+        }
         List<uint> listOfMessagesLost = fullListOfMessagesLost[index];
         uint idMessage = message.id;
         bool thereAreMessagesLost = false;
@@ -181,11 +189,16 @@ public class MessageClass
 
             if (idMessage > 0)
             {
+                bool enteredFor = false;
                 for (uint i = 0; i < idMessage; i++)
                 {
                     listOfMessagesLost.Add(i);
+                    enteredFor = true;
                 }
-                fullListOfMessagesLost[index] = listOfMessagesLost;
+                if (enteredFor)
+                {
+                    fullListOfMessagesLost[index] = listOfMessagesLost;
+                }
             }
         }
         else
@@ -199,22 +212,31 @@ public class MessageClass
             else
             {
                 listOfMessages[index] = idMessage;
+                bool enteredFor = false;
                 for(uint i = lastMessageID + 1; i < idMessage; i++)
                 {
                     listOfMessagesLost.Add(i);
+                    enteredFor = true;
                 }
-                fullListOfMessagesLost[index] = listOfMessagesLost;
+                if (enteredFor)
+                {
+                    fullListOfMessagesLost[index] = listOfMessagesLost;
+                }
             }
         }
 
-        if (fullListOfMessagesLost.Count > 0)
+        foreach (var lists in fullListOfMessagesLost)
         {
-            thereAreMessagesLost = true;
-        }
+            if (lists.Value.Count > 0)
+            {
+                thereAreMessagesLost = true;
+
+            }
+        }  
         
 
-        
-
+        if (!sendMessage)
+            return null;
         MessageClass messageToSend;
         if (thereAreMessagesLost)
         {
