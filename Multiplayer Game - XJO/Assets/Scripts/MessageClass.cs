@@ -21,7 +21,8 @@ public class MessageClass
         SIdle,
         D,
         DIdle,
-        Attack
+        Attack,
+        Idle
     }
 
     //public enum OBJECTUPDATE

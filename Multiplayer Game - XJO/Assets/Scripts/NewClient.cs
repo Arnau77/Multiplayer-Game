@@ -175,9 +175,15 @@ public class NewClient : MonoBehaviour
                 switch (messageReceived.typeOfMessage)
                 {
                     case MessageClass.TYPEOFMESSAGE.Input:
+
                         if (messageReceived.input == MessageClass.INPUT.Attack)
                         {
                             characterScript.Attack();
+                        }
+         
+                        if(messageReceived.input == MessageClass.INPUT.A || messageReceived.input == MessageClass.INPUT.D)
+                        {
+                            characterScript.Walk(messageReceived.input);
                         }
                         break;
                     case MessageClass.TYPEOFMESSAGE.Connection:

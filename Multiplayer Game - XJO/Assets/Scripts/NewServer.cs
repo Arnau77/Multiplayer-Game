@@ -192,7 +192,7 @@ public class NewServer : MonoBehaviour
 
                     break;
             }
-            Debug.Log(Encoding.ASCII.GetString(buffer));
+            //Debug.Log(Encoding.ASCII.GetString(buffer));
 
 
         }
