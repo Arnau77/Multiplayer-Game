@@ -16,7 +16,8 @@ public class NewClient : MonoBehaviour
     private Socket socket;
     private List<MessageWithPossibleJitter> textsToSend = new List<MessageWithPossibleJitter>();
     private List<MessageWithPossibleJitter> backupTexts = new List<MessageWithPossibleJitter>();
-    private Dictionary<int, List<uint>> listOfMessagesReceived = new Dictionary<int, List<uint>>();
+    private Dictionary<int, uint> listOfMessagesReceived = new Dictionary<int, uint>();
+    private Dictionary<int, List<uint>> listOfMessagesNeeded = new Dictionary<int, List<uint>>();
     private List<Action> actions = new List<Action>();
     private object actionLock;
     private object textLock;
@@ -190,23 +191,16 @@ public class NewClient : MonoBehaviour
                         clientID = messageReceived.playerID;
                         break;
                 }
-                if (messageReceived.typeOfMessage != MessageClass.TYPEOFMESSAGE.Connection)
+                if (messageReceived.typeOfMessage != MessageClass.TYPEOFMESSAGE.Connection || messageReceived.typeOfMessage!=MessageClass.TYPEOFMESSAGE.Acknowledgment)
                 {
                     int index = messageReceived.playerID;
-                    if (!listOfMessagesReceived.ContainsKey(index))
-                    {
-                        listOfMessagesReceived.Add(index, new List<uint>());
-                    }
-
-                    CheckIfThereAreMessagesLost(listOfMessagesReceived[index], messageReceived);
-
                     
-                    MessageClass message = new MessageClass(messageReceived.id, messageReceived.playerID, MessageClass.TYPEOFMESSAGE.Acknoledgment, DateTime.Now);
-                    for(int i = 0; i < 3; i++)
+                    List<MessageClass> newMessages= MessageClass.CheckIfThereAreMessagesLost(ref listOfMessagesReceived, ref listOfMessagesNeeded, messageReceived, index);
+                    for(int i = 0; i < newMessages.Count; i++)
                     {
                         lock (textLock)
                         {
-                            textsToSend.Add(new MessageWithPossibleJitter(message.Serialize()));
+                            textsToSend.Add(new MessageWithPossibleJitter(newMessages[i].Serialize()));
                         }
                     }
                 }
@@ -229,57 +223,7 @@ public class NewClient : MonoBehaviour
         }
     }
 
-    public void CheckIfThereAreMessagesLost(List<uint> listOfMessages, MessageClass message)
-    {
-        uint idMessage = message.id;
-        int sizeList = listOfMessages.Count;
-        bool thereAreMessagesLost = false;
-        Dictionary<uint, int> messagesLost= new Dictionary<uint, int>();
-
-        if (sizeList < 1)
-        {
-            if (idMessage > 0)
-            {
-                thereAreMessagesLost = true;
-                for(uint i = 0; i < idMessage; i++)
-                {
-                    messagesLost.Add(i, message.playerID);
-                }
-            }
-        }
-        //else
-        //{
-        //    foreach (var id in messagesLost)
-        //    {
-        //    }
-        //}
-        else if (sizeList == 1)
-        {
-            if (messagesLost.ContainsKey(idMessage - 1))
-            {
-                messagesLost.Clear();
-                messagesLost.Add(idMessage, message.playerID);
-            }
-            else
-            {
-                uint idLastMessage = messagesLost.Keys.GetEnumerator().Current;
-            }
-        }
-        else
-        {
-
-        }
-
-
-        if (thereAreMessagesLost)
-        {
-            MessageClass messageToSend = new MessageClass(idMessage, message.playerID, MessageClass.TYPEOFMESSAGE.MessagesNeeded, DateTime.Now, messagesLost);
-            lock (textLock)
-            {
-                textsToSend.Add(new MessageWithPossibleJitter(messageToSend.Serialize()));
-            }
-        }
-    }
+   
 
     private void OnDestroy()
     {
