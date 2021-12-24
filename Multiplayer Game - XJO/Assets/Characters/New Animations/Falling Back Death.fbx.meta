@@ -1,11 +1,11 @@
 fileFormatVersion: 2
-guid: 266aa9c7dacf5d849814f350b6d5feff
+guid: e9edd771984895f4eb77ccae20211340
 ModelImporter:
   serializedVersion: 21100
   internalIDToNameTable:
   - first:
       74: -203655887218126122
-    second: mixamo.com
+    second: Die
   externalObjects: {}
   materials:
     materialImportMode: 2
@@ -35,11 +35,11 @@ ModelImporter:
     extraUserProperties: []
     clipAnimations:
     - serializedVersion: 16
-      name: mixamo.com
+      name: Die
       takeName: mixamo.com
       internalID: 0
       firstFrame: 0
-      lastFrame: 37
+      lastFrame: 78
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -52,9 +52,9 @@ ModelImporter:
       loopBlendPositionY: 0
       loopBlendPositionXZ: 0
       keepOriginalOrientation: 1
-      keepOriginalPositionY: 1
+      keepOriginalPositionY: 0
       keepOriginalPositionXZ: 0
-      heightFromFeet: 0
+      heightFromFeet: 1
       mirror: 0
       bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
       curves: []

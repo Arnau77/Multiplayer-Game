@@ -1,11 +1,11 @@
 fileFormatVersion: 2
-guid: 266aa9c7dacf5d849814f350b6d5feff
+guid: 9fd23245b3046334e86d4fc923243fbb
 ModelImporter:
   serializedVersion: 21100
   internalIDToNameTable:
   - first:
       74: -203655887218126122
-    second: Hit
+    second: Blocked
   externalObjects: {}
   materials:
     materialImportMode: 2
@@ -35,11 +35,11 @@ ModelImporter:
     extraUserProperties: []
     clipAnimations:
     - serializedVersion: 16
-      name: Hit
+      name: Blocked
       takeName: mixamo.com
       internalID: 0
-      firstFrame: 0
-      lastFrame: 37
+      firstFrame: 26
+      lastFrame: 72
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -48,7 +48,7 @@ ModelImporter:
       hasAdditiveReferencePose: 0
       loopTime: 0
       loopBlend: 0
-      loopBlendOrientation: 0
+      loopBlendOrientation: 1
       loopBlendPositionY: 0
       loopBlendPositionXZ: 0
       keepOriginalOrientation: 1

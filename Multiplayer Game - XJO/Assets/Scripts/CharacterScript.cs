@@ -1,9 +1,12 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class CharacterScript : MonoBehaviour
 {
+
+    public static Action<CharacterScript> onReceiveDamage;
     public Animator animator;
     public CharacterController controller;
     public float speed;
@@ -14,12 +17,14 @@ public class CharacterScript : MonoBehaviour
     private bool beingHit = false;
     public NewClient client;
     private bool attack = false;
+    private bool blocking = false;
 
     [Header("Attack Info")]
     public Transform castDamagePoint;
     public float hitRadius;
 
     public bool canMove = true;
+    public bool startBlocking = false;
     enum STATE
     {
         SEARCH_STATE,
@@ -43,17 +48,26 @@ public class CharacterScript : MonoBehaviour
     private List<INPUT_STATE> inputList = new List<INPUT_STATE>();
 
 
+
     // Start is called before the first frame update
     void Start()
     {
-
+       
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (startBlocking)
+        {
+            blocking = true;
+            animator.SetBool("Blocking", blocking);
+        }
+
         if (!canMove)
             return;
+
+
         ProcessInternalInput();
         ProcessExternalInput();
 
@@ -101,7 +115,8 @@ public class CharacterScript : MonoBehaviour
         {
             Attack();
         }
-
+        blocking = Input.GetKey(KeyCode.B);
+        animator.SetBool("Blocking", blocking);
         //if (!beingHit)
         //{
         //    dir = new Vector3(Input.GetAxisRaw("Horizontal"), 0.0f, Input.GetAxisRaw("Vertical"));
@@ -257,13 +272,22 @@ public class CharacterScript : MonoBehaviour
 
     public void ReceiveDamage()
     {
+        if (blocking)
+        {
+            animator.SetTrigger("Blocked");
+            return;
+        }
         health -= 50;
         if(health <= 0)
         {
             health = 0;
             Debug.Log("Died");
+            animator.SetTrigger("Die");
+            animator.applyRootMotion = true;
         }
         animator.SetTrigger("HeadHit");
+
+        onReceiveDamage?.Invoke(this);
     }
 
     public void CheckDamage()
@@ -277,6 +301,11 @@ public class CharacterScript : MonoBehaviour
                 character.ReceiveDamage();
                 Debug.Log("Hitted");
                 StartCoroutine(PushedBack(character));
+            }
+
+            if(c.gameObject.TryGetComponent(out IDamageable damageable))
+            {
+                damageable.RecieveDamage();
             }
         }
         
