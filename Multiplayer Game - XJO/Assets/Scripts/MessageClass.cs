@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 public class MessageClass
 {
     public enum TYPEOFMESSAGE
@@ -36,7 +37,7 @@ public class MessageClass
     public INPUT input;
     public int objectID;
     public System.DateTime time;
-    int[,] messagesNeeded;
+    public Dictionary<uint, int> messagesNeeded;
     //public OBJECTUPDATE objectUpdate;
 
     public MessageClass(uint i, int pi, TYPEOFMESSAGE type, System.DateTime t)
@@ -66,7 +67,7 @@ public class MessageClass
         //objectUpdate = ou;
     }
 
-    public MessageClass(uint i, int pi, TYPEOFMESSAGE type, System.DateTime t, int[,] needed)
+    public MessageClass(uint i, int pi, TYPEOFMESSAGE type, System.DateTime t, Dictionary<uint, int> needed)
     {
         id = i;
         playerID = pi;
@@ -93,12 +94,11 @@ public class MessageClass
             case TYPEOFMESSAGE.MessagesNeeded:
                 string[] numbers = info[4].Split(';');
                 string[] specificNumbers;
-                messagesNeeded = new int[numbers.Length,2];
+                messagesNeeded = new Dictionary<uint, int>();
                 for(int i = 0; i < numbers.Length; i++)
                 {
                     specificNumbers = numbers[i].Split(',');
-                    messagesNeeded[i, 0] = int.Parse(specificNumbers[0]);
-                    messagesNeeded[i, 1] = int.Parse(specificNumbers[1]);
+                    messagesNeeded.Add(uint.Parse(specificNumbers[1]), int.Parse(specificNumbers[0]));
                 }
                 break;
             default:
@@ -118,16 +118,18 @@ public class MessageClass
                 info = '#' + objectID.ToString();
                 break;
             case TYPEOFMESSAGE.MessagesNeeded:
+                bool firstNumber = true;
                 string numbers="";
-                for(int i = 0; i < messagesNeeded.Length/2; i++)
+                foreach(var number in messagesNeeded)
                 {
-                    if (i > 0)
+                    if (!firstNumber)
                     {
                         numbers += ';';
                     }
-                    numbers += messagesNeeded[i, 0];
+                    numbers += number.Value;
                     numbers += ',';
-                    numbers+= messagesNeeded[i, 1];
+                    numbers += number.Key;
+                    firstNumber = false;
                 }
                 info = '#' + numbers;
                 break;

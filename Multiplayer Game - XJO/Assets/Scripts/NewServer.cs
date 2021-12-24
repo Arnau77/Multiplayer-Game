@@ -179,7 +179,7 @@ public class NewServer : MonoBehaviour
                     {
                         if (i == id)
                         {
-                            continue;
+                            //continue;
                         }
                         lock (textLock)
                         {

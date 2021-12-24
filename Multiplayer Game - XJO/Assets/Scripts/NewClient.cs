@@ -16,6 +16,7 @@ public class NewClient : MonoBehaviour
     private Socket socket;
     private List<MessageWithPossibleJitter> textsToSend = new List<MessageWithPossibleJitter>();
     private List<MessageWithPossibleJitter> backupTexts = new List<MessageWithPossibleJitter>();
+    private Dictionary<int, List<uint>> listOfMessagesReceived = new Dictionary<int, List<uint>>();
     private List<Action> actions = new List<Action>();
     private object actionLock;
     private object textLock;
@@ -89,10 +90,9 @@ public class NewClient : MonoBehaviour
         }
         if (Input.GetKeyDown(KeyCode.M))
         {
+            MessageClass message = new MessageClass(messageID++, -1, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now);
             lock (textLock)
             {
-                int[,] list = { { 1, 0 }, { 2, 1 }, { 3, 2 } };
-                MessageClass message = new MessageClass(messageID++, -1, MessageClass.TYPEOFMESSAGE.MessagesNeeded, DateTime.Now,list);
                 textsToSend.Add(new MessageWithPossibleJitter(message.Serialize()));
             }
         }
@@ -186,10 +186,19 @@ public class NewClient : MonoBehaviour
                 }
                 if (messageReceived.typeOfMessage != MessageClass.TYPEOFMESSAGE.Connection)
                 {
-                    lock (textLock)
+                    int index = messageReceived.playerID;
+                    if (!listOfMessagesReceived.ContainsKey(index))
                     {
-                        MessageClass message = new MessageClass(messageReceived.id, messageReceived.playerID, MessageClass.TYPEOFMESSAGE.Acknoledgment, DateTime.Now);
-                        for(int i = 0; i < 3; i++)
+                        listOfMessagesReceived.Add(index, new List<uint>());
+                    }
+
+                    CheckIfThereAreMessagesLost(listOfMessagesReceived[index], messageReceived);
+
+                    
+                    MessageClass message = new MessageClass(messageReceived.id, messageReceived.playerID, MessageClass.TYPEOFMESSAGE.Acknoledgment, DateTime.Now);
+                    for(int i = 0; i < 3; i++)
+                    {
+                        lock (textLock)
                         {
                             textsToSend.Add(new MessageWithPossibleJitter(message.Serialize()));
                         }
@@ -200,17 +209,70 @@ public class NewClient : MonoBehaviour
         }
     }
 
-    private void OnIncomingData(string data)
-    {
-        Debug.Log("Server : " + data);
-    }
+    //private void OnIncomingData(string data)
+    //{
+    //    Debug.Log("Server : " + data);
+    //}
 
     public void SendInputMessageToServer(MessageClass.INPUT messageInput)
     {
+        MessageClass message = new MessageClass(messageID++, clientID, MessageClass.TYPEOFMESSAGE.Input, DateTime.Now, messageInput);
         lock (textLock)
         {
-            MessageClass message = new MessageClass(messageID++, clientID, MessageClass.TYPEOFMESSAGE.Input, DateTime.Now, messageInput);
             textsToSend.Add(new MessageWithPossibleJitter(message.Serialize()));
+        }
+    }
+
+    public void CheckIfThereAreMessagesLost(List<uint> listOfMessages, MessageClass message)
+    {
+        uint idMessage = message.id;
+        int sizeList = listOfMessages.Count;
+        bool thereAreMessagesLost = false;
+        Dictionary<uint, int> messagesLost= new Dictionary<uint, int>();
+
+        if (sizeList < 1)
+        {
+            if (idMessage > 0)
+            {
+                thereAreMessagesLost = true;
+                for(uint i = 0; i < idMessage; i++)
+                {
+                    messagesLost.Add(i, message.playerID);
+                }
+            }
+        }
+        else
+        {
+            foreach (var id in messagesLost)
+            {
+
+            }
+        }
+        else if (sizeList == 1)
+        {
+            if (messagesLost.ContainsKey(idMessage - 1))
+            {
+                messagesLost.Clear();
+                messagesLost.Add(idMessage, message.playerID);
+            }
+            else
+            {
+                uint idLastMessage = messagesLost.Keys.GetEnumerator().Current;
+            }
+        }
+        else
+        {
+
+        }
+
+
+        if (thereAreMessagesLost)
+        {
+            MessageClass messageToSend = new MessageClass(idMessage, message.playerID, MessageClass.TYPEOFMESSAGE.MessagesNeeded, DateTime.Now, messagesLost);
+            lock (textLock)
+            {
+                textsToSend.Add(new MessageWithPossibleJitter(messageToSend.Serialize()));
+            }
         }
     }
 
