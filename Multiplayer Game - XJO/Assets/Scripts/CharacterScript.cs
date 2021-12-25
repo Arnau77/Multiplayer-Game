@@ -11,8 +11,6 @@ public class CharacterScript : MonoBehaviour
     public CharacterController controller;
     public float speed;
     private Vector3 dir;
-    private bool A;
-    private bool D;
     public int health;
     private bool beingHit = false;
     public NewClient client;
@@ -83,47 +81,45 @@ public class CharacterScript : MonoBehaviour
     {
 
         //Send messages to client
-        A = Input.GetAxisRaw("Horizontal") < 0 ? true : false;
-        D = Input.GetAxisRaw("Horizontal") > 0 ? true : false;
+        //A = Input.GetAxisRaw("Horizontal") < 0 ? true : false;
+        //D = Input.GetAxisRaw("Horizontal") > 0 ? true : false;
 
-        Debug.Log($"Pressed A: {A} Pressed D: {D}");
-        //dir = new Vector3(Input.GetAxisRaw("Horizontal"), 0.0f, Input.GetAxisRaw("Vertical"));
-        //dir = dir.normalized;
-        if (!A && !D)
-        {
+        //Debug.Log($"Pressed A: {A} Pressed D: {D}");
+        //if (!A && !D)
+        //{
 
-            //client.SendInputMessageToServer(MessageClass.INPUT.Idle);
+        //    //client.SendInputMessageToServer(MessageClass.INPUT.Idle);
 
-            inputList.Add(INPUT_STATE.IN_IDLE);
-        }
-        else if(!attack)
-        {
-            if (A)
-            {
-                //client.SendInputMessageToServer(MessageClass.INPUT.A);
-                Walk(MessageClass.INPUT.A);
-            }
-            else if (D)
-            {
-                Walk(MessageClass.INPUT.D);
-                //client.SendInputMessageToServer(MessageClass.INPUT.D);
+        //    inputList.Add(INPUT_STATE.IN_IDLE);
+        //}
+        //else if(!attack)
+        //{
+        //    if (A)
+        //    {
+        //        //client.SendInputMessageToServer(MessageClass.INPUT.A);
+        //        //Walk(MessageClass.INPUT.A);
+        //    }
+        //    else if (D)
+        //    {
+        //        //Walk(MessageClass.INPUT.D);
+        //        //client.SendInputMessageToServer(MessageClass.INPUT.D);
 
-            }
-            //inputList.Add(INPUT_STATE.IN_WALK);
-        }
+        //    }
+        //    //inputList.Add(INPUT_STATE.IN_WALK);
+        //}
         if (Input.GetKeyDown(KeyCode.Y))
         {
             Attack();
         }
-        blocking = Input.GetKey(KeyCode.B);
-        animator.SetBool("Blocking", blocking);
-        //if (!beingHit)
-        //{
-        //    dir = new Vector3(Input.GetAxisRaw("Horizontal"), 0.0f, Input.GetAxisRaw("Vertical"));
-        //    dir = dir.normalized;
-        //    if (dir == Vector3.zero) inputList.Add(INPUT_STATE.IN_IDLE);
-        //    else inputList.Add(INPUT_STATE.IN_WALK);
-        //}
+        //blocking = Input.GetKey(KeyCode.B);
+        //animator.SetBool("Blocking", blocking);
+        if (!beingHit)
+        {
+            dir = new Vector3(Input.GetAxisRaw("Horizontal"), 0.0f, 0f);
+            dir = dir.normalized;
+            if (dir == Vector3.zero) inputList.Add(INPUT_STATE.IN_IDLE);
+            else inputList.Add(INPUT_STATE.IN_WALK);
+        }
 
     }
 
@@ -225,14 +221,15 @@ public class CharacterScript : MonoBehaviour
         {
             
             case STATE.IDLE:
-                animator.Play("Fighting Idle");
-                animator.SetBool("A", false);
-                animator.SetBool("D", false);
+                animator.SetInteger("DIR", 0);
+                //animator.Play("Fighting Idle");
+                //animator.SetBool("A", false);
+                //animator.SetBool("D", false);
                 break;
             case STATE.WALK:
-                animator.SetBool("A",A);
-                animator.SetBool("D",D);
+                animator.SetInteger("DIR",(int)dir.x);
                 controller.Move(dir.normalized * speed * Time.deltaTime);
+
                 break;
             case STATE.HIT:
                 animator.Play("Hit Reaction");
@@ -260,14 +257,14 @@ public class CharacterScript : MonoBehaviour
             inputList.Add(INPUT_STATE.IN_WALK);
         }
 
-        if(input == MessageClass.INPUT.A)
-        {
-            dir = new Vector3(-1, 0, 0);
-        }
-        else if (input == MessageClass.INPUT.D)
-        {
-            dir = new Vector3(1, 0, 0);
-        }
+        //if(input == MessageClass.INPUT.A)
+        //{
+        //    dir = new Vector3(-1, 0, 0);
+        //}
+        //else if (input == MessageClass.INPUT.D)
+        //{
+        //    dir = new Vector3(1, 0, 0);
+        //}
     }
 
     public void ReceiveDamage()
