@@ -30,16 +30,19 @@ public class NewClient : MonoBehaviour
     private bool firstMessageSent = false;
     private bool connected = false;
     private uint messageID = 0;
-    private int clientID = -1;
+    public int clientID = -1;
 
     public bool packetLoss = false;
     public bool jitter = false;
     public int lossThreshold = 90;
     public int minJitt = 0;
     public int maxJitt = 800;
+    public Dictionary<int, Vector3> positionsDic = new Dictionary<int, Vector3>();
+
+    public static Action<int> onConnectionReceived;
 
     //TEMPORAL!!!!!!!!!!!!!!!!
-    public CharacterScript characterScript;
+    public List<CharacterScript> characterScripts;
 
 
     public class MessageWithPossibleJitter
@@ -54,6 +57,12 @@ public class NewClient : MonoBehaviour
             jitterApplied = false;
         }
     }
+
+    private void Awake()
+    {
+        DontDestroyOnLoad(this);
+    }
+
     void Start()
     {
         actionLock = new object();
@@ -62,7 +71,7 @@ public class NewClient : MonoBehaviour
         MessageClass message = new MessageClass(messageID++, clientID, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now, new Vector3(0,0,0));
         textsToSend.Add(new MessageWithPossibleJitter(message.Serialize()));
         //TODO: WARNING!!!!!!! THIS LINE WILL HAVE TO PROBABLY BE REMOVED LATER, WHEN HAVING THE LOBBY
-        ConnectToServer();
+     
     }
     public void ConnectToServer()
     {
@@ -192,15 +201,20 @@ public class NewClient : MonoBehaviour
                 switch (messageReceived.typeOfMessage)
                 {
                     case MessageClass.TYPEOFMESSAGE.Input:
+                        foreach (var character in characterScripts)
+                        {
+                            if (character.ID != messageReceived.playerID)
+                                continue;
 
-                        if (messageReceived.input == MessageClass.INPUT.Attack)
-                        {
-                            characterScript.Attack();
-                        }
-         
-                        if(messageReceived.input == MessageClass.INPUT.A || messageReceived.input == MessageClass.INPUT.D)
-                        {
-                            characterScript.Walk(messageReceived.input);
+                            if (messageReceived.input == MessageClass.INPUT.Attack)
+                            {
+                                character.Attack();
+                            }
+
+                            if (messageReceived.input == MessageClass.INPUT.Move)
+                            {
+                                character.Walk(messageReceived.position);
+                            }
                         }
                         break;
                     case MessageClass.TYPEOFMESSAGE.Connection:
@@ -212,6 +226,8 @@ public class NewClient : MonoBehaviour
                             }
                             clientID = messageReceived.playerID;
                         }
+                        actions.Add(() => onConnectionReceived?.Invoke(messageReceived.playerID));
+                        positionsDic.Add(messageReceived.playerID, messageReceived.position);
                         break;
                     case MessageClass.TYPEOFMESSAGE.Acknowledgment:
                         checkIfThereAreMessagesLost = false;
@@ -284,9 +300,18 @@ public class NewClient : MonoBehaviour
     //    Debug.Log("Server : " + data);
     //}
 
-    public void SendInputMessageToServer(MessageClass.INPUT messageInput)
+    public void SendInputMessageToServer(MessageClass.INPUT messageInput, bool sendPos = false, float x = 0, float y = 0, float z = 0)
     {
-        MessageClass message = new MessageClass(messageID++, clientID, MessageClass.TYPEOFMESSAGE.Input, DateTime.Now, messageInput);
+        MessageClass message;
+        if (sendPos)
+        {
+            message = new MessageClass(messageID++, clientID, MessageClass.TYPEOFMESSAGE.Input, DateTime.Now, messageInput,new Vector3(x,y,z));
+        }
+        else
+        {
+
+            message = new MessageClass(messageID++, clientID, MessageClass.TYPEOFMESSAGE.Input, DateTime.Now, messageInput);
+        }
         lock (textLock)
         {
             textsToSend.Add(new MessageWithPossibleJitter(message.Serialize()));

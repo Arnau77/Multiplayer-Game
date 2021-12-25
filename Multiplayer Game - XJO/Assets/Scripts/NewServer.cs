@@ -10,6 +10,12 @@ using System.Threading;
 
 public class NewServer : MonoBehaviour
 {
+
+    [Header("UI Manager")]
+    public GameObject playername1;
+    public GameObject playername2;
+
+
     private List<EndPoint> guests; //keeps track of the connections
     private List<EndPoint> disconnections; //keeps track of disconnections
     private List<Action> actions = new List<Action>();
@@ -26,6 +32,7 @@ public class NewServer : MonoBehaviour
     private Thread serverSendThread;
     private Socket server;
     //private static int maxID = 0;
+    [Space(10)]
     public int maxPlayers;
     private bool morePlayersAllowed = true;
     public int port = 6162; //default port
@@ -184,17 +191,59 @@ public class NewServer : MonoBehaviour
                             {
                                 morePlayersAllowed = false;
                             }
+
+                            if (id== 0)
+                            {
+                                lock (actionLock)
+                                {
+                                    actions.Add(() => playername1.SetActive(true));
+                                }
+                            }
+                            else if(id == 1)
+                            {
+                                lock (actionLock)
+                                {
+                                    actions.Add(() => playername2.SetActive(true));
+                                }
+                            }
+
+             
+
                             Debug.Log("NEwwW CLIENT");
                             for (int i = 0; i < localClients.Count; i++)
                             {
-                                MessageClass message = new MessageClass(messageReceived.id, id, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now, new Vector3(0,0,0));
+                                Vector3 pos;
+                                if (id == 0)
+                                {
+                                    pos = new Vector3(7, 0, -19);
+
+                                }
+                                else
+                                {
+                                    pos = new Vector3(17, 0, -19);
+                                }
+
+                                MessageClass message = new MessageClass(messageReceived.id, id, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now, pos);
                                 lock (textLock)
                                 {
                                     textsToSend.Add(new TextWithID(message.Serialize(), i));
                                 }
                             }
+
+                            for (int i = 0; i < guests.Count -1; i++)
+                            {
+                                Vector3 pos = new Vector3(7, 0, -19);                                
+                                
+                                MessageClass message = new MessageClass(0, i, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now, pos);
+                                lock (textLock)
+                                {
+                                    textsToSend.Add(new TextWithID(message.Serialize(), id));
+                                }
+                            }
                         }
                         checkIfThereAreMessagesLost = false;
+
+
                         break;
                     }
                 case MessageClass.TYPEOFMESSAGE.Input:

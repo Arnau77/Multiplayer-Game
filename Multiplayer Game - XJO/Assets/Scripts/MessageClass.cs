@@ -15,14 +15,7 @@ public class MessageClass
 
     public enum INPUT
     {
-        W,
-        WIdle,
-        A,
-        AIdle,
-        S,
-        SIdle,
-        D,
-        DIdle,
+        Move,
         Attack,
         Idle
     }
@@ -59,6 +52,15 @@ public class MessageClass
         typeOfMessage = type;
         time = t;
         input = inp;
+    }
+    public MessageClass(uint i, int pi, TYPEOFMESSAGE type, System.DateTime t, INPUT inp, Vector3 pos)
+    {
+        id = i;
+        playerID = pi;
+        typeOfMessage = type;
+        time = t;
+        input = inp;
+        position = pos;
     }
 
     public MessageClass(uint i, int pi, TYPEOFMESSAGE type, System.DateTime t, bool lost)
@@ -110,6 +112,11 @@ public class MessageClass
         {
             case TYPEOFMESSAGE.Input:
                 input = (INPUT)int.Parse(info[4]);
+                if(input == INPUT.Move)
+                {
+                    string[] move = info[5].Split(';');
+                    position = new Vector3(float.Parse(move[0]), float.Parse(move[1]), float.Parse(move[2]));
+                }
                 break;
             case TYPEOFMESSAGE.Connection:
                 string[] pos = info[4].Split(';');
@@ -148,6 +155,10 @@ public class MessageClass
         {
             case TYPEOFMESSAGE.Input:
                 info = '#' + input.ToString("d");
+                if(input == INPUT.Move)
+                {
+                    info += '#' + position.x.ToString() + ';' + position.y.ToString() + ';' + position.z.ToString();
+                }
                 break;
             case TYPEOFMESSAGE.WorldUpdate:
                 info = '#' + objectID.ToString();

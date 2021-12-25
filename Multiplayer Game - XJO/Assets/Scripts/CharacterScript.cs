@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class CharacterScript : MonoBehaviour
 {
-
+    public int ID;
     public static Action<CharacterScript> onReceiveDamage;
     public Animator animator;
     public CharacterController controller;
@@ -13,14 +13,13 @@ public class CharacterScript : MonoBehaviour
     private Vector3 dir;
     public int health;
     private bool beingHit = false;
-    public NewClient client;
     private bool attack = false;
     private bool blocking = false;
 
     [Header("Attack Info")]
     public Transform castDamagePoint;
     public float hitRadius;
-
+    public NewClient client;
     public bool canMove = true;
     public bool startBlocking = false;
     enum STATE
@@ -56,15 +55,6 @@ public class CharacterScript : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (startBlocking)
-        {
-            blocking = true;
-            animator.SetBool("Blocking", blocking);
-        }
-
-        if (!canMove)
-            return;
-
 
         ProcessInternalInput();
         ProcessExternalInput();
@@ -109,17 +99,24 @@ public class CharacterScript : MonoBehaviour
         //}
         if (Input.GetKeyDown(KeyCode.Y))
         {
-            Attack();
+            if (client.clientID == ID)
+            {
+                Attack();
+                client.SendInputMessageToServer(MessageClass.INPUT.Attack);
+            }
         }
         //blocking = Input.GetKey(KeyCode.B);
         //animator.SetBool("Blocking", blocking);
-        if (!beingHit)
+        if (client.clientID == ID)
         {
+            //Local
             dir = new Vector3(Input.GetAxisRaw("Horizontal"), 0.0f, 0f);
             dir = dir.normalized;
             if (dir == Vector3.zero) inputList.Add(INPUT_STATE.IN_IDLE);
             else inputList.Add(INPUT_STATE.IN_WALK);
         }
+            //Send position
+        
 
     }
 
@@ -227,8 +224,13 @@ public class CharacterScript : MonoBehaviour
                 //animator.SetBool("D", false);
                 break;
             case STATE.WALK:
-                animator.SetInteger("DIR",(int)dir.x);
-                controller.Move(dir.normalized * speed * Time.deltaTime);
+                if (client.clientID == ID)
+                {
+                    Vector3 desiredPos = transform.position + (dir.normalized * speed * Time.deltaTime);
+                    Walk(desiredPos);
+                    client.SendInputMessageToServer(MessageClass.INPUT.Move, true, desiredPos.x, desiredPos.y, desiredPos.z);
+                    
+                }
 
                 break;
             case STATE.HIT:
@@ -250,13 +252,11 @@ public class CharacterScript : MonoBehaviour
         animator.SetTrigger("Punch");
     }
 
-    public void Walk(MessageClass.INPUT input)
+    public void Walk(Vector3 desiredPos)
     {
-        if(currentState != STATE.WALK)
-        {
-            inputList.Add(INPUT_STATE.IN_WALK);
-        }
 
+        controller.transform.position = desiredPos;
+        animator.SetInteger("DIR", (int)dir.x);
         //if(input == MessageClass.INPUT.A)
         //{
         //    dir = new Vector3(-1, 0, 0);

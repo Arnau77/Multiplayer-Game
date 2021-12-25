@@ -62,11 +62,8 @@ AnimatorStateTransition:
   m_PrefabAsset: {fileID: 0}
   m_Name: 
   m_Conditions:
-  - m_ConditionMode: 2
-    m_ConditionEvent: D
-    m_EventTreshold: 0
-  - m_ConditionMode: 2
-    m_ConditionEvent: A
+  - m_ConditionMode: 6
+    m_ConditionEvent: DIR
     m_EventTreshold: 0
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: 686521101718951074}
@@ -165,9 +162,9 @@ AnimatorStateTransition:
   m_PrefabAsset: {fileID: 0}
   m_Name: 
   m_Conditions:
-  - m_ConditionMode: 1
-    m_ConditionEvent: A
-    m_EventTreshold: 0
+  - m_ConditionMode: 6
+    m_ConditionEvent: DIR
+    m_EventTreshold: -1
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: 6454574910599142935}
   m_Solo: 0
@@ -215,9 +212,9 @@ AnimatorStateTransition:
   m_PrefabAsset: {fileID: 0}
   m_Name: 
   m_Conditions:
-  - m_ConditionMode: 1
-    m_ConditionEvent: D
-    m_EventTreshold: 0
+  - m_ConditionMode: 6
+    m_ConditionEvent: DIR
+    m_EventTreshold: 1
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: 2032713283102896132}
   m_Solo: 0
@@ -291,18 +288,6 @@ AnimatorController:
   m_Name: Player
   serializedVersion: 5
   m_AnimatorParameters:
-  - m_Name: A
-    m_Type: 4
-    m_DefaultFloat: 0
-    m_DefaultInt: 0
-    m_DefaultBool: 0
-    m_Controller: {fileID: 0}
-  - m_Name: D
-    m_Type: 4
-    m_DefaultFloat: 0
-    m_DefaultInt: 0
-    m_DefaultBool: 0
-    m_Controller: {fileID: 0}
   - m_Name: Punch
     m_Type: 9
     m_DefaultFloat: 0
@@ -329,6 +314,12 @@ AnimatorController:
     m_Controller: {fileID: 0}
   - m_Name: Blocked
     m_Type: 9
+    m_DefaultFloat: 0
+    m_DefaultInt: 0
+    m_DefaultBool: 0
+    m_Controller: {fileID: 0}
+  - m_Name: DIR
+    m_Type: 3
     m_DefaultFloat: 0
     m_DefaultInt: 0
     m_DefaultBool: 0
@@ -486,11 +477,8 @@ AnimatorStateTransition:
   m_PrefabAsset: {fileID: 0}
   m_Name: 
   m_Conditions:
-  - m_ConditionMode: 2
-    m_ConditionEvent: A
-    m_EventTreshold: 0
-  - m_ConditionMode: 2
-    m_ConditionEvent: D
+  - m_ConditionMode: 6
+    m_ConditionEvent: DIR
     m_EventTreshold: 0
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: 686521101718951074}
