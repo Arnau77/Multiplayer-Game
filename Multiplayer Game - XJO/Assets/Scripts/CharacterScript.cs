@@ -15,6 +15,9 @@ public class CharacterScript : MonoBehaviour
     private bool beingHit = false;
     private bool attack = false;
     private bool blocking = false;
+    private bool toAttack = false;
+    private bool toWalk = false;
+    private Vector3 toWalkVector;
 
     [Header("Attack Info")]
     public Transform castDamagePoint;
@@ -22,6 +25,8 @@ public class CharacterScript : MonoBehaviour
     public NewClient client;
     public bool canMove = true;
     public bool startBlocking = false;
+    private object attackLock=new object();
+    private object walkLock = new object();
     enum STATE
     {
         SEARCH_STATE,
@@ -115,9 +120,23 @@ public class CharacterScript : MonoBehaviour
             if (dir == Vector3.zero) inputList.Add(INPUT_STATE.IN_IDLE);
             else inputList.Add(INPUT_STATE.IN_WALK);
         }
-            //Send position
-        
-
+        //Send position
+        lock (attackLock)
+        {
+            if (toAttack)
+            {
+                toAttack = false;
+                Attack();
+            }
+        }
+        lock (walkLock)
+        {
+            if (toWalk)
+            {
+                toWalk = false;
+                Walk(toWalkVector);
+            }
+        }
     }
 
     void ProcessExternalInput()
@@ -267,6 +286,22 @@ public class CharacterScript : MonoBehaviour
         //}
     }
 
+    public void ToAttacK()
+    {
+        lock (attackLock)
+        {
+            toAttack = true;
+        }
+    }
+
+    public void ToWalk(Vector3 vector)
+    {
+        lock (walkLock)
+        {
+            toWalk = true;
+            toWalkVector = vector;
+        }
+    }
     public void ReceiveDamage()
     {
         if (blocking)

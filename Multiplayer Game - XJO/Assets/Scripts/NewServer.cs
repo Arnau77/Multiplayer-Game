@@ -257,11 +257,16 @@ public class NewServer : MonoBehaviour
                         {
                             if (i == id)
                             {
-                                //continue;
+                                continue;
+                            }
+                            Vector3 move= new Vector3(0,0,0);
+                            if (messageReceived.input == MessageClass.INPUT.Move)
+                            {
+                                move = messageReceived.position;
                             }
                             lock (textLock)
                             {
-                                MessageClass message = new MessageClass(messageReceived.id, id, MessageClass.TYPEOFMESSAGE.Input, DateTime.Now, MessageClass.INPUT.Attack);
+                                MessageClass message = new MessageClass(messageReceived.id, id, MessageClass.TYPEOFMESSAGE.Input, DateTime.Now, messageReceived.input, move);
                                 textsToSend.Add(new TextWithID(message.Serialize(), i));
                             }
                         }

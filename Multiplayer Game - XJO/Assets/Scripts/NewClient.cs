@@ -208,12 +208,12 @@ public class NewClient : MonoBehaviour
 
                             if (messageReceived.input == MessageClass.INPUT.Attack)
                             {
-                                character.Attack();
+                                character.ToAttacK();
                             }
 
                             if (messageReceived.input == MessageClass.INPUT.Move)
                             {
-                                character.Walk(messageReceived.position);
+                                character.ToWalk(messageReceived.position);
                             }
                         }
                         break;
