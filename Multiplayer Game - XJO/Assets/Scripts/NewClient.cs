@@ -59,7 +59,7 @@ public class NewClient : MonoBehaviour
         actionLock = new object();
         textLock = new object();
         backupLock = new object();
-        MessageClass message = new MessageClass(messageID++, clientID, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now);
+        MessageClass message = new MessageClass(messageID++, clientID, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now, new Vector3(0,0,0));
         textsToSend.Add(new MessageWithPossibleJitter(message.Serialize()));
         //TODO: WARNING!!!!!!! THIS LINE WILL HAVE TO PROBABLY BE REMOVED LATER, WHEN HAVING THE LOBBY
         ConnectToServer();

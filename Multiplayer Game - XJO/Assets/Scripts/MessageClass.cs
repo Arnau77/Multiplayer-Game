@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 public class MessageClass
 {
     public enum TYPEOFMESSAGE
@@ -40,6 +41,7 @@ public class MessageClass
     public System.DateTime time;
     public Dictionary<int, List<uint>> messagesNeeded;
     public bool messagesLostInBetween;
+    public Vector3 position;
     //public OBJECTUPDATE objectUpdate;
 
     public MessageClass(uint i, int pi, TYPEOFMESSAGE type, System.DateTime t)
@@ -87,6 +89,15 @@ public class MessageClass
         messagesNeeded = needed;
     }
 
+    public MessageClass(uint i, int pi, TYPEOFMESSAGE type, System.DateTime t, Vector3 pos)
+    {
+        id = i;
+        playerID = pi;
+        typeOfMessage = type;
+        time = t;
+        position = pos;
+    }
+
     public MessageClass(string str)
     {
         str = str.TrimEnd('\0');
@@ -99,6 +110,10 @@ public class MessageClass
         {
             case TYPEOFMESSAGE.Input:
                 input = (INPUT)int.Parse(info[4]);
+                break;
+            case TYPEOFMESSAGE.Connection:
+                string[] pos = info[4].Split(';');
+                position = new Vector3(float.Parse(pos[0]), float.Parse(pos[1]), float.Parse(pos[2]));
                 break;
             case TYPEOFMESSAGE.WorldUpdate:
                 objectID = int.Parse(info[4]);
@@ -136,6 +151,9 @@ public class MessageClass
                 break;
             case TYPEOFMESSAGE.WorldUpdate:
                 info = '#' + objectID.ToString();
+                break;
+            case TYPEOFMESSAGE.Connection:
+                info = '#' + position.x.ToString() + ';' + position.y.ToString() + ';' + position.z.ToString();
                 break;
             case TYPEOFMESSAGE.Acknowledgment:
                 info = '#' + messagesLostInBetween.ToString();

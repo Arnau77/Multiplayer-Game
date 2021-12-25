@@ -187,7 +187,7 @@ public class NewServer : MonoBehaviour
                             Debug.Log("NEwwW CLIENT");
                             for (int i = 0; i < localClients.Count; i++)
                             {
-                                MessageClass message = new MessageClass(messageReceived.id, id, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now);
+                                MessageClass message = new MessageClass(messageReceived.id, id, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now, new Vector3(0,0,0));
                                 lock (textLock)
                                 {
                                     textsToSend.Add(new TextWithID(message.Serialize(), i));
