@@ -241,10 +241,7 @@ public class MessageClass
         if (thereAreMessagesLost)
         {
             messageToSend = new MessageClass(idMessage, message.playerID, MessageClass.TYPEOFMESSAGE.MessagesNeeded, System.DateTime.Now, fullListOfMessagesLost);
-            for (int i = 0; i < 3; i++)
-            {
-                messagesToSend.Add(messageToSend);
-            }
+            messagesToSend.Add(messageToSend);
         }
         messageToSend = new MessageClass(idMessage, message.playerID, MessageClass.TYPEOFMESSAGE.Acknowledgment, System.DateTime.Now, thereAreMessagesLost);
         messagesToSend.Add(messageToSend);
