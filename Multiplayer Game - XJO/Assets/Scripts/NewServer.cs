@@ -17,8 +17,10 @@ public class NewServer : MonoBehaviour
     private List<TextWithID> backupTexts = new List<TextWithID>();
     private Dictionary<int, uint> listOfMessagesReceived = new Dictionary<int, uint>();
     private Dictionary<int, List<uint>> listOfMessagesNeeded = new Dictionary<int, List<uint>>();
+    private Dictionary<InfoOfBackupMessages, string> backupOfMessagesSent = new Dictionary<InfoOfBackupMessages, string>();
     private object actionLock;
     private object guestLock;
+    private object backupLock;
     private object textLock;
     private Thread serverListenThread;
     private Thread serverSendThread;
@@ -50,6 +52,20 @@ public class NewServer : MonoBehaviour
         }
     }
 
+    public class InfoOfBackupMessages
+    {
+        public uint messageID;
+        public int senderID;
+        public int getterID;
+
+        public InfoOfBackupMessages(uint messageId, int senderId, int getterId)
+        {
+            messageID = messageId;
+            senderID = senderId;
+            getterID = getterId;
+        }
+    }
+
     //definition of who connects to the server
     //public class ServerClient
     //{
@@ -68,6 +84,7 @@ public class NewServer : MonoBehaviour
         actionLock = new object();
         guestLock = new object();
         textLock = new object();
+        backupLock = new object();
 
 
         guests = new List<EndPoint>();
@@ -194,11 +211,68 @@ public class NewServer : MonoBehaviour
                     localClients.Clear();
                     break;
                 case MessageClass.TYPEOFMESSAGE.Acknowledgment:
-                    checkIfThereAreMessagesLost = false;
-                    break;
+                    {
+                        checkIfThereAreMessagesLost = false;
+                        Dictionary<InfoOfBackupMessages, string> backupOfTheBackup;
+                        lock (backupLock)
+                        {
+                            backupOfTheBackup = new Dictionary<InfoOfBackupMessages, string>(backupOfMessagesSent);
+                        }
+                        List<InfoOfBackupMessages> messagesToDelete = new List<InfoOfBackupMessages>();
+                        foreach (var backMessage in backupOfTheBackup)
+                        {
+                            if (backMessage.Key.getterID != id)
+                                continue;
+                            if (backMessage.Key.senderID != messageReceived.playerID)
+                                continue;
+                            if (backMessage.Key.messageID > messageReceived.id)
+                                continue;
+
+                            if (messageReceived.messagesLostInBetween == false || messageReceived.id == backMessage.Key.messageID)
+                            {
+                                messagesToDelete.Add(backMessage.Key);
+                            }
+                            else
+                            {
+                                lock (textLock)
+                                {
+                                    textsToSend.Add(new TextWithID(backMessage.Value, id));
+                                }
+                            }
+                        }
+                        foreach (var messageDeleting in messagesToDelete)
+                        {
+                            lock (backupLock)
+                            {
+                                backupOfMessagesSent.Remove(messageDeleting);
+                            }
+                        }
+                        break;
+                    }
                 case MessageClass.TYPEOFMESSAGE.MessagesNeeded:
-                    checkIfThereAreMessagesLost = false;
+                    {
+                        checkIfThereAreMessagesLost = false;
+                        Dictionary<InfoOfBackupMessages, string> backupOfTheBackup;
+                        lock (backupLock)
+                        {
+                            backupOfTheBackup = new Dictionary<InfoOfBackupMessages, string>(backupOfMessagesSent);
+                        }
+                        foreach (var backMessage in backupOfTheBackup)
+                        {
+                            if (backMessage.Key.getterID != id)
+                                continue;
+                            if (!messageReceived.messagesNeeded.ContainsKey(backMessage.Key.senderID))
+                                continue;
+                            if (messageReceived.messagesNeeded[backMessage.Key.senderID].Contains(backMessage.Key.messageID))
+                            {
+                                lock (textLock)
+                                {
+                                    textsToSend.Add(new TextWithID(backMessage.Value,id));
+                                }
+                            }
+                        }
                     break;
+                    }
             }
             int index = messageReceived.playerID;
             List<MessageClass> newMessages = MessageClass.CheckIfThereAreMessagesLost(ref listOfMessagesReceived, ref listOfMessagesNeeded, messageReceived, index, checkIfThereAreMessagesLost);
@@ -245,9 +319,25 @@ public class NewServer : MonoBehaviour
                 //HERE WE WILL WORK WITH PACKET LOSS AND JITTER
                 if (!localTexts[i].jitterApplied)
                 {
+                    MessageClass.TYPEOFMESSAGE type = (MessageClass.TYPEOFMESSAGE)int.Parse(localTexts[i].text.Split('#')[2]);
+                    if (type != MessageClass.TYPEOFMESSAGE.Acknowledgment || type != MessageClass.TYPEOFMESSAGE.MessagesNeeded)
+                    {
+                        uint id = uint.Parse(localTexts[i].text.Split('#')[0]);
+                        int senderID = int.Parse(localTexts[i].text.Split('#')[1]);
+                        InfoOfBackupMessages info= new InfoOfBackupMessages(id,senderID,localTexts[i].id);
+                        lock (backupLock)
+                        {
+                            if (!backupOfMessagesSent.ContainsKey(info))
+                            {
+                                backupOfMessagesSent.Add(info, localTexts[i].text);
+                            }
+                        }
+                    }
+
                     //FIRST PACKET LOSS
                     if (packetLoss && r.Next(0, 100) <= lossThreshold)
                     {
+                        Debug.LogWarning("Message Lost by server");
                         continue;
                     }
                     //THEN JITTER

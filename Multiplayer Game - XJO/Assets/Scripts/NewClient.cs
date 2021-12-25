@@ -149,11 +149,10 @@ public class NewClient : MonoBehaviour
                             }
                         }
                     }
-                    int rs = r.Next(0, 100);
                     //FIRST PACKET LOSS
-                    if (packetLoss && rs <= lossThreshold)
+                    if (packetLoss && r.Next(0, 100) <= lossThreshold)
                     {
-                        Debug.LogWarning("Message Lost: " + rs);
+                        Debug.LogWarning("Message Lost by client: " + clientID);
                         continue;
                     }
                     //THEN JITTER
