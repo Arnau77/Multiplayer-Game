@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Net;
 using System;
 using System.IO;
+using UnityEngine.UI;
 using System.Text;
 using System.Threading;
 
@@ -36,11 +37,11 @@ public class NewServer : MonoBehaviour
     public int maxPlayers;
     private bool morePlayersAllowed = true;
     public int port = 6162; //default port
-    public bool packetLoss = false;
-    public bool jitter = false;
-    public int lossThreshold = 90;
-    public int minJitt = 0;
-    public int maxJitt = 800;
+    public GameObject packetLoss;
+    public GameObject jitter;
+    public GameObject lossThreshold;
+    public GameObject minJitt;
+    public GameObject maxJitt;
 
     private bool serverconnected; //server started or not
 
@@ -418,16 +419,16 @@ public class NewServer : MonoBehaviour
                     }
 
                     //FIRST PACKET LOSS
-                    if (packetLoss && r.Next(0, 100) <= lossThreshold)
+                    if (packetLoss.GetComponent<Toggle>().isOn && r.Next(0, 100) <= Int32.Parse(lossThreshold.GetComponent<InputField>().text))
                     {
                         if(type!=MessageClass.TYPEOFMESSAGE.Acknowledgment)
                             Debug.LogWarning("Message Lost by server: " + localTexts[i].text);
                         continue;
                     }
                     //THEN JITTER
-                    if (jitter)
+                    if (jitter.GetComponent<Toggle>().isOn)
                     {
-                        localTexts[i].timeToSendMessage = DateTime.Now.AddMilliseconds(r.Next(minJitt, maxJitt));
+                        localTexts[i].timeToSendMessage = DateTime.Now.AddMilliseconds(r.Next(Int32.Parse(minJitt.GetComponent<InputField>().text), Int32.Parse(maxJitt.GetComponent<InputField>().text)));
                     }
                     localTexts[i].jitterApplied = true;
                 }
