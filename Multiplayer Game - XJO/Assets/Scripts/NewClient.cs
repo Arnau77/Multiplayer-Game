@@ -23,13 +23,17 @@ public class NewClient : MonoBehaviour
     private object actionLock;
     private object backupLock;
     private object textLock;
+    private object messageReceivedLock;
     private Thread clientListenThread;
     private Thread clientSendThread;
     private StreamWriter writter;
     private StreamReader reader;
     private bool firstMessageSent = false;
+    private bool firstMessageReceived = false;
+    private bool resentMessage = false;
     private bool connected = false;
     private uint messageID = 0;
+    private DateTime connectionTimer;
     public int clientID = -1;
 
     public bool packetLoss = false;
@@ -41,7 +45,6 @@ public class NewClient : MonoBehaviour
 
     public static Action<int> onConnectionReceived;
 
-    //TEMPORAL!!!!!!!!!!!!!!!!
     public List<CharacterScript> characterScripts;
 
 
@@ -68,10 +71,9 @@ public class NewClient : MonoBehaviour
         actionLock = new object();
         textLock = new object();
         backupLock = new object();
+        messageReceivedLock = new object();
         MessageClass message = new MessageClass(messageID++, clientID, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now, new Vector3(0,0,0));
         textsToSend.Add(new MessageWithPossibleJitter(message.Serialize()));
-        //TODO: WARNING!!!!!!! THIS LINE WILL HAVE TO PROBABLY BE REMOVED LATER, WHEN HAVING THE LOBBY
-     
     }
     public void ConnectToServer()
     {
@@ -88,6 +90,7 @@ public class NewClient : MonoBehaviour
 
         clientSendThread.Start();
         clientListenThread.Start();
+        connectionTimer = DateTime.Now.AddMilliseconds(100);
     }
 
     private void Update()
@@ -101,14 +104,19 @@ public class NewClient : MonoBehaviour
                 action();
             }
         }
-        if (Input.GetKeyDown(KeyCode.M))
+        lock (messageReceivedLock)
         {
-            MessageClass message = new MessageClass(messageID++, clientID, MessageClass.TYPEOFMESSAGE.Disconnection, DateTime.Now);
-            lock (textLock)
+            if(!firstMessageReceived && DateTime.Now > connectionTimer)
             {
-                textsToSend.Add(new MessageWithPossibleJitter(message.Serialize()));
+                MessageClass message = new MessageClass(0, clientID, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now, new Vector3(0, 0, 0));
+                lock (textLock)
+                {
+                    textsToSend.Add(new MessageWithPossibleJitter(message.Serialize()));
+                }
+                connectionTimer = DateTime.Now.AddMilliseconds(100);
             }
         }
+
         //if (socketReady)
         //{
         //    if (stream.DataAvailable)
@@ -181,10 +189,9 @@ public class NewClient : MonoBehaviour
                 buffer = Encoding.ASCII.GetBytes(localTexts[i].text);
                 socket.SendTo(buffer, buffer.Length, SocketFlags.None, ipDestination);
                 firstMessageSent = true;
+                Debug.LogWarning("Message sent");
             }
             localTexts.Clear();
-
-
         }
     }
 
@@ -196,6 +203,10 @@ public class NewClient : MonoBehaviour
             if (firstMessageSent)
             {
                 socket.ReceiveFrom(buffer, ref serverPoint);
+                lock (messageReceivedLock)
+                {
+                    firstMessageReceived = true;
+                }
                 MessageClass messageReceived = new MessageClass(Encoding.ASCII.GetString(buffer));
                 bool checkIfThereAreMessagesLost = true;
                 switch (messageReceived.typeOfMessage)
@@ -227,7 +238,10 @@ public class NewClient : MonoBehaviour
                             clientID = messageReceived.playerID;
                         }
                         actions.Add(() => onConnectionReceived?.Invoke(messageReceived.playerID));
-                        positionsDic.Add(messageReceived.playerID, messageReceived.position);
+                        if (!positionsDic.ContainsKey(messageReceived.playerID))
+                        {
+                            positionsDic.Add(messageReceived.playerID, messageReceived.position);
+                        }
                         break;
                     case MessageClass.TYPEOFMESSAGE.Acknowledgment:
                         checkIfThereAreMessagesLost = false;
