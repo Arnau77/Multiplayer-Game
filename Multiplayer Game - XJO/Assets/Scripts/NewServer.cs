@@ -170,45 +170,74 @@ public class NewServer : MonoBehaviour
             switch (messageReceived.typeOfMessage)
             {
                 case MessageClass.TYPEOFMESSAGE.Connection:
-                    if (morePlayersAllowed && id==-1)
                     {
+                        if (morePlayersAllowed && id == -1)
+                        {
+                            List<EndPoint> localClients;
+                            lock (guestLock)
+                            {
+                                guests.Add(clientPoint);
+                                id = guests.Count;
+                                localClients = new List<EndPoint>(guests);
+                            }
+                            if (id-- >= maxPlayers)
+                            {
+                                morePlayersAllowed = false;
+                            }
+                            Debug.Log("NEwwW CLIENT");
+                            for (int i = 0; i < localClients.Count; i++)
+                            {
+                                MessageClass message = new MessageClass(messageReceived.id, id, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now);
+                                lock (textLock)
+                                {
+                                    textsToSend.Add(new TextWithID(message.Serialize(), i));
+                                }
+                            }
+                        }
+                        checkIfThereAreMessagesLost = false;
+                        break;
+                    }
+                case MessageClass.TYPEOFMESSAGE.Input:
+                    {
+                        List<EndPoint> localClients;
                         lock (guestLock)
                         {
-                            guests.Add(clientPoint);
-                            id = guests.Count;
+                            localClients = new List<EndPoint>(guests);
                         }
-                        if (id-- >= maxPlayers)
+                        for (int i = 0; i < localClients.Count; i++)
                         {
-                            morePlayersAllowed = false;
+                            if (i == id)
+                            {
+                                //continue;
+                            }
+                            lock (textLock)
+                            {
+                                MessageClass message = new MessageClass(messageReceived.id, id, MessageClass.TYPEOFMESSAGE.Input, DateTime.Now, MessageClass.INPUT.Attack);
+                                textsToSend.Add(new TextWithID(message.Serialize(), i));
+                            }
                         }
-                        Debug.Log("NEwwW CLIENT");
-                        lock (textLock)
-                        {
-                            MessageClass message = new MessageClass(messageReceived.id, id, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now);
-                            textsToSend.Add(new TextWithID(message.Serialize(),id));
-                        }
+                        localClients.Clear();
+                        break;
                     }
-                    checkIfThereAreMessagesLost = false;
-                    break;
-                case MessageClass.TYPEOFMESSAGE.Input:
-                    List<EndPoint> localClients;
+                case MessageClass.TYPEOFMESSAGE.Disconnection:
+                    List<EndPoint> localsClients;
                     lock (guestLock)
                     {
-                        localClients = new List<EndPoint>(guests);
+                        localsClients = new List<EndPoint>(guests);
                     }
-                    for (int i = 0; i < localClients.Count; i++)
+                    for (int i = 0; i < localsClients.Count; i++)
                     {
                         if (i == id)
                         {
-                            //continue;
+                            continue;
                         }
                         lock (textLock)
                         {
-                            MessageClass message = new MessageClass(messageReceived.id, id, MessageClass.TYPEOFMESSAGE.Input, DateTime.Now,MessageClass.INPUT.Attack);
+                            MessageClass message = new MessageClass(messageReceived.id, id, MessageClass.TYPEOFMESSAGE.Disconnection, DateTime.Now, MessageClass.INPUT.Attack);
                             textsToSend.Add(new TextWithID(message.Serialize(), i));
                         }
                     }
-                    localClients.Clear();
+                    localsClients.Clear();
                     break;
                 case MessageClass.TYPEOFMESSAGE.Acknowledgment:
                     {
@@ -283,7 +312,7 @@ public class NewServer : MonoBehaviour
                     textsToSend.Add(new TextWithID(newMessages[i].Serialize(),id));
                 }
             }
-            //Debug.Log(Encoding.ASCII.GetString(buffer));
+                Debug.Log("Server from Player "+id+": " + Encoding.ASCII.GetString(buffer));
 
 
         }
@@ -320,7 +349,7 @@ public class NewServer : MonoBehaviour
                 if (!localTexts[i].jitterApplied)
                 {
                     MessageClass.TYPEOFMESSAGE type = (MessageClass.TYPEOFMESSAGE)int.Parse(localTexts[i].text.Split('#')[2]);
-                    if (type != MessageClass.TYPEOFMESSAGE.Acknowledgment || type != MessageClass.TYPEOFMESSAGE.MessagesNeeded)
+                    if (type != MessageClass.TYPEOFMESSAGE.Acknowledgment && type != MessageClass.TYPEOFMESSAGE.MessagesNeeded)
                     {
                         uint id = uint.Parse(localTexts[i].text.Split('#')[0]);
                         int senderID = int.Parse(localTexts[i].text.Split('#')[1]);
@@ -337,7 +366,8 @@ public class NewServer : MonoBehaviour
                     //FIRST PACKET LOSS
                     if (packetLoss && r.Next(0, 100) <= lossThreshold)
                     {
-                        Debug.LogWarning("Message Lost by server");
+                        if(type!=MessageClass.TYPEOFMESSAGE.Acknowledgment)
+                            Debug.LogWarning("Message Lost by server: " + localTexts[i].text);
                         continue;
                     }
                     //THEN JITTER

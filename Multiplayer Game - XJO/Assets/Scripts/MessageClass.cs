@@ -170,7 +170,7 @@ public class MessageClass
         return id.ToString() + '#' + playerID.ToString() + '#' + typeOfMessage.ToString("d") + '#' + time.ToString() + info + '#';
     }
 
-    public static List<MessageClass> CheckIfThereAreMessagesLost(ref Dictionary<int, uint> listOfMessages, ref Dictionary<int, List<uint>> fullListOfMessagesLost, MessageClass message, int index, bool sendMessage)
+    public static List<MessageClass> CheckIfThereAreMessagesLost(ref Dictionary<int, uint> listOfMessages, ref Dictionary<int, List<uint>> fullListOfMessagesLost, MessageClass message, int index, bool sendMessage, int clientID=0)
     {
         uint lastMessageID;
         if (!fullListOfMessagesLost.ContainsKey(index))
@@ -187,10 +187,17 @@ public class MessageClass
         {
             listOfMessages.Add(index, idMessage);
 
-            if (idMessage > 0)
+            uint firstMessageExpected = 0;
+
+            if (clientID > index)
+            {
+                firstMessageExpected = 1;
+            }
+
+            if (idMessage > firstMessageExpected)
             {
                 bool enteredFor = false;
-                for (uint i = 0; i < idMessage; i++)
+                for (uint i = firstMessageExpected; i < idMessage; i++)
                 {
                     listOfMessagesLost.Add(i);
                     enteredFor = true;
@@ -201,7 +208,7 @@ public class MessageClass
                 }
             }
         }
-        else
+        else if (clientID !=index)
         {
             lastMessageID = listOfMessages[index];
             if (idMessage < lastMessageID)

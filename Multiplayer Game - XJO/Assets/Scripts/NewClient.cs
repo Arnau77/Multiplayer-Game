@@ -138,7 +138,7 @@ public class NewClient : MonoBehaviour
                 if (!localTexts[i].jitterApplied)
                 {
                     MessageClass.TYPEOFMESSAGE type = (MessageClass.TYPEOFMESSAGE)int.Parse(localTexts[i].text.Split('#')[2]);
-                    if (type != MessageClass.TYPEOFMESSAGE.Acknowledgment || type != MessageClass.TYPEOFMESSAGE.MessagesNeeded)
+                    if (type != MessageClass.TYPEOFMESSAGE.Acknowledgment && type != MessageClass.TYPEOFMESSAGE.MessagesNeeded)
                     {
                         uint id = uint.Parse(localTexts[i].text.Split('#')[0]);
                         lock (backupLock)
@@ -210,8 +210,8 @@ public class NewClient : MonoBehaviour
                             {
                                 backupOfMessagesSent.Remove(0);
                             }
+                            clientID = messageReceived.playerID;
                         }
-                        clientID = messageReceived.playerID;
                         break;
                     case MessageClass.TYPEOFMESSAGE.Acknowledgment:
                         checkIfThereAreMessagesLost = false;
@@ -264,7 +264,7 @@ public class NewClient : MonoBehaviour
                 }
 
                 int index = messageReceived.playerID;
-                List<MessageClass> newMessages= MessageClass.CheckIfThereAreMessagesLost(ref listOfMessagesReceived, ref listOfMessagesNeeded, messageReceived, index,checkIfThereAreMessagesLost);
+                List<MessageClass> newMessages= MessageClass.CheckIfThereAreMessagesLost(ref listOfMessagesReceived, ref listOfMessagesNeeded, messageReceived, index,checkIfThereAreMessagesLost, clientID);
                 for(int i = 0; newMessages != null && i < newMessages.Count; i++)
                 {
                     lock (textLock)
@@ -272,7 +272,9 @@ public class NewClient : MonoBehaviour
                         textsToSend.Add(new MessageWithPossibleJitter(newMessages[i].Serialize()));
                     }
                 }
-                Debug.Log(Encoding.ASCII.GetString(buffer));
+                if (messageReceived.typeOfMessage != MessageClass.TYPEOFMESSAGE.Acknowledgment)
+
+                    Debug.Log("Player " + clientID + ": " + Encoding.ASCII.GetString(buffer));
             }
         }
     }
