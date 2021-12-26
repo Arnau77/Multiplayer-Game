@@ -33,11 +33,15 @@ public class NewServer : MonoBehaviour
     private object textLock;
     private object losesJitterLock;
     private object maxPlayersLock;
+    private object disconnectionLock;
     private object confirmedGuestsLock;
     private Thread serverListenThread;
     private Thread serverSendThread;
     private Socket server;
     private bool startPlayed = false;
+    private bool disconnectedItself = true;
+    private int totalClientsToDisconnect=0;
+    private DateTime timerDisconnection;
 
     [Space(10)]
     public int maxPlayers;
@@ -94,6 +98,7 @@ public class NewServer : MonoBehaviour
         losesJitterLock = new object();
         confirmedGuestsLock = new object();
         maxPlayersLock = new object();
+        disconnectionLock = new object();
 
         guests = new List<EndPoint>();
         unconfirmedGuests = new List<int>();
@@ -162,14 +167,7 @@ public class NewServer : MonoBehaviour
             }
         }
 
-        if (Input.GetKeyDown(KeyCode.M))
-        {
-            MessageClass message = new MessageClass(0, 0, MessageClass.TYPEOFMESSAGE.Disconnection, DateTime.Now);
-            lock (textLock)
-            {
-                textsToSend.Add(new TextWithID(message.Serialize(),0));
-            }
-        }
+        
     }
 
 
@@ -316,6 +314,13 @@ public class NewServer : MonoBehaviour
                                 }
                             }
                             
+                        }
+                        if (messageReceived.playerID == -2)
+                        {
+                            lock (disconnectionLock)
+                            {
+                                totalClientsToDisconnect--;
+                            }
                         }
                         Dictionary<InfoOfBackupMessages, string> backupOfTheBackup;
                         lock (backupLock)
@@ -522,8 +527,43 @@ public class NewServer : MonoBehaviour
         }
     }
 
+    public void SendDisconnectionMessage(int clientID)
+    {
+        MessageClass message = new MessageClass(0, -2, MessageClass.TYPEOFMESSAGE.Disconnection, DateTime.Now);
+        lock (textLock)
+        {
+            textsToSend.Add(new TextWithID(message.Serialize(), clientID));
+        }
+    }
+
     private void OnDestroy()
     {
+        if (disconnectedItself)
+        {
+            int initialClients;
+            int localClientsToDisconnect;
+            lock (disconnectionLock)
+            {
+                lock (guestLock)
+                {
+                    totalClientsToDisconnect = guests.Count;
+                }
+                initialClients = totalClientsToDisconnect;
+                localClientsToDisconnect = initialClients;
+            }
+            while (localClientsToDisconnect > 0)
+            {
+                for(int i = 0; i < initialClients; i++)
+                {
+                    SendDisconnectionMessage(i);
+                }
+                lock (disconnectionLock)
+                {
+                    localClientsToDisconnect = totalClientsToDisconnect;
+                }
+            }
+            
+        }
         serverListenThread.Abort();
         serverSendThread.Abort();
         server.Close();
