@@ -13,9 +13,13 @@ public class UIManager : MonoBehaviour
     public List<Image> healthBars;
     public TextMeshProUGUI gameTime;
 
+    public GameObject winText;
+    public GameObject loseText;
+
+
     [Header("Pause")]
     public GameObject pause;
-    private void Awake()
+    private void Start()
     {
         players = FindObjectsOfType<CharacterScript>().ToList();
         for (int i = 0; i < players.Count; i++)
@@ -27,6 +31,7 @@ public class UIManager : MonoBehaviour
     private void OnEnable()
     {
         CharacterScript.onReceiveDamage += UpdateHealth;
+        CharacterScript.onFinishGame += ShowFinalMessage;
         onUpdateTimer += UpdateTimer;
         GameManager.onPauseGame += PauseGame;
     }
@@ -36,13 +41,14 @@ public class UIManager : MonoBehaviour
         CharacterScript.onReceiveDamage -= UpdateHealth;    
         onUpdateTimer -= UpdateTimer;
         GameManager.onPauseGame -= PauseGame;
+        CharacterScript.onFinishGame -= ShowFinalMessage;
     }
 
     public void UpdateHealth(CharacterScript characterScript)
     {
         for (int i = 0; i < players.Count; i++)
         {
-            if(players[i] == characterScript)
+            if(players[i] != characterScript)
             {
                 healthBars[i].fillAmount = (float)characterScript.health / 100;
             }
@@ -57,5 +63,17 @@ public class UIManager : MonoBehaviour
     {
         pause.SetActive(!pause.activeInHierarchy);
         Time.timeScale = pause.activeInHierarchy ? 0 : 1;
+    }
+
+    public void ShowFinalMessage(bool boolean)
+    {
+        if (boolean)
+        {
+            winText.SetActive(true);
+        }
+        else
+        {
+            loseText.SetActive(true);
+        }
     }
 }

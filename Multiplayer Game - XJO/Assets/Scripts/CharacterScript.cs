@@ -7,6 +7,7 @@ public class CharacterScript : MonoBehaviour
 {
     public int ID;
     public static Action<CharacterScript> onReceiveDamage;
+    public static Action<bool> onFinishGame;
     public Animator animator;
     public CharacterController controller;
     public float speed;
@@ -29,11 +30,11 @@ public class CharacterScript : MonoBehaviour
     public NewClient client;
     public bool canMove = true;
     public bool startBlocking = false;
-    private object attackLock=new object();
-    private object walkLock = new object();
-    private object idleLock = new object();
-    private object blockLock = new object();
-    private object knockBackLock = new object();
+    private object attackLock;
+    private object walkLock;
+    private object idleLock; 
+    private object blockLock;
+    private object knockBackLock;
     enum STATE
     {
         SEARCH_STATE,
@@ -61,7 +62,11 @@ public class CharacterScript : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-       
+        attackLock = new object();
+        walkLock = new object();
+        idleLock = new object();
+        blockLock = new object();
+        knockBackLock = new object();
     }
 
     // Update is called once per frame
@@ -184,7 +189,7 @@ public class CharacterScript : MonoBehaviour
             if (toKnockBack)
             {
                 toKnockBack = false;
-                StartCoroutine(PushedBack(this));
+                //StartCoroutine(PushedBack(this));
                 this.ReceiveDamage();
             }
         }
@@ -404,6 +409,18 @@ public class CharacterScript : MonoBehaviour
             Debug.Log("Died");
             animator.SetTrigger("Die");
             animator.applyRootMotion = true;
+
+            //Finish game
+            if (ID == client.clientID)
+            {
+                onFinishGame?.Invoke(false);
+            }
+            else
+            {
+                onFinishGame?.Invoke(true);
+            }
+
+
         }
         animator.SetTrigger("HeadHit");
 
@@ -418,13 +435,13 @@ public class CharacterScript : MonoBehaviour
         {
             if(c.gameObject.TryGetComponent(out CharacterScript character))
             {
-                if (client.clientID == ID)
-                {
-                    //character.ReceiveDamage();
+                //if (client.clientID == ID)
+                //{
+                    character.ReceiveDamage();
                     Debug.Log("Hitted");
-                    StartCoroutine(PushedBack(character));
-                    client.SendInputMessageToServer(MessageClass.INPUT.KnockBack);
-                }
+                    //StartCoroutine(PushedBack(character));
+                    //client.SendInputMessageToServer(MessageClass.INPUT.KnockBack);
+                //}
             }
 
             if(c.gameObject.TryGetComponent(out IDamageable damageable))

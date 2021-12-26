@@ -304,7 +304,7 @@ public class NewClient : MonoBehaviour
                         }
                         break;
                     case MessageClass.TYPEOFMESSAGE.Disconnection:
-                        if (messageReceived.playerID==-2)
+                        if (messageReceived.playerID == -2)
                         {
                             disconnectItself = false;
                             lock (actionLock)
@@ -317,6 +317,13 @@ public class NewClient : MonoBehaviour
                             lock (disconnectionLock)
                             {
                                 disconnectionAcknowledged = true;
+                            }
+                        }
+                        else
+                        {
+                            lock (actionLock)
+                            {
+                                actions.Add(() => CharacterScript.onFinishGame?.Invoke(true));
                             }
                         }
                         break;
