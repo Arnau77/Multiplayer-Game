@@ -397,12 +397,13 @@ public class CharacterScript : MonoBehaviour
 
     public void ReceiveDamage()
     {
+        int damage = 50;
         if (blocking)
         {
             animator.SetTrigger("Blocked");
-            return;
+            damage = 5;
         }
-        health -= 50;
+        health -= damage;
         if(health <= 0)
         {
             health = 0;
