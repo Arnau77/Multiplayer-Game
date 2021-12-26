@@ -226,6 +226,11 @@ public class NewClient : MonoBehaviour
                             {
                                 character.ToWalk(messageReceived.position);
                             }
+
+                            if(messageReceived.input == MessageClass.INPUT.Idle)
+                            {
+                                character.ToIdle();
+                            }
                         }
                         break;
                     case MessageClass.TYPEOFMESSAGE.Connection:
