@@ -7,6 +7,7 @@ public class GameManager : MonoBehaviour
 {
     public int gameTime;
     public static Action onPauseGame;
+    private bool endCountDown = false;
 
     public List<CharacterScript> prefabs;
 
@@ -67,43 +68,47 @@ public class GameManager : MonoBehaviour
     IEnumerator TimeDown()
     {
         int time = 99;
-        while (time > 0)
+        while (time > 0 && !endCountDown)
         {
             yield return new WaitForSeconds(1);
             time -= 1;
             UIManager.onUpdateTimer?.Invoke(time);
         }
-
-        if(playersList[0].health > playersList[1].health)
+        if (!endCountDown)
         {
-            if (client.clientID == playersList[0].ID)
+            if (playersList[0].health > playersList[1].health)
             {
-                CharacterScript.onFinishGame?.Invoke(true);
+                if (client.clientID == playersList[0].ID)
+                {
+                    CharacterScript.onFinishGame?.Invoke(true);
+                }
+                else
+                {
+
+                    CharacterScript.onFinishGame?.Invoke(false);
+                }
             }
             else
             {
+                if (client.clientID == playersList[1].ID)
+                {
+                    CharacterScript.onFinishGame?.Invoke(true);
+                }
+                else
+                {
 
-                CharacterScript.onFinishGame?.Invoke(false);
+                    CharacterScript.onFinishGame?.Invoke(false);
+                }
+
             }
         }
-        else
-        {
-            if (client.clientID == playersList[1].ID)
-            {
-                CharacterScript.onFinishGame?.Invoke(true);
-            }
-            else
-            {
-
-                CharacterScript.onFinishGame?.Invoke(false);
-            }
-
-        }
+        
     }
 
     public void StopCountDown(bool boolean)
     {
         StopCoroutine(TimeDown());
+        endCountDown = true;
     }
 
     public void SpawnPlayer(int i, Vector3 pos)
