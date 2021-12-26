@@ -518,3 +518,106 @@ AssetImportParameters requested are different than current active one (requested
   custom:video-decoder-webm-vp8: 9c59270c3fd7afecdb556c50c9e8de78 -> 
   custom:audio-decoder-ogg-vorbis: bf7c407c2cedff20999df2af8eb42d56 -> 
   custom:audio-encoder-webm-vorbis: bf7c407c2cedff20999df2af8eb42d56 -> 
+========================================================================
+Received Import Request.
+  Time since last request: 1093.121623 seconds.
+  path: Assets/Scenes/FightArena.unity
+  artifactKey: Guid(9fc0d4010bbf28b4594072e72b8655ab) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Scenes/FightArena.unity using Guid(9fc0d4010bbf28b4594072e72b8655ab) Importer(815301076,1909f56bfc062723c751e8b465ee728b)  -> (artifact id: '209e6012c95cddb5e88654b6677aee65') in 0.014131 seconds 
+========================================================================
+Received Import Request.
+  Time since last request: 52.845849 seconds.
+  path: Assets/Scenario/UI/HUD_XBOT.png
+  artifactKey: Guid(58e06982716d4164aab9a9be1b463d37) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Scenario/UI/HUD_XBOT.png using Guid(58e06982716d4164aab9a9be1b463d37) Importer(815301076,1909f56bfc062723c751e8b465ee728b)  -> (artifact id: 'e08918b58b2455bbd76786fb6f48be97') in 0.027482 seconds 
+========================================================================
+Received Import Request.
+  Time since last request: 3.256965 seconds.
+  path: Assets/Scenario/UI/HUD_XBOT.png
+  artifactKey: Guid(58e06982716d4164aab9a9be1b463d37) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Scenario/UI/HUD_XBOT.png using Guid(58e06982716d4164aab9a9be1b463d37) Importer(815301076,1909f56bfc062723c751e8b465ee728b)  -> (artifact id: 'ad492964963630c298a27900050b0b82') in 0.028050 seconds 
+========================================================================
+Received Import Request.
+  Time since last request: 1.298804 seconds.
+  path: Assets/Scenario/UI/HUD_YBOT.png
+  artifactKey: Guid(ab934edb69ecca243b47283b0f2860b1) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Scenario/UI/HUD_YBOT.png using Guid(ab934edb69ecca243b47283b0f2860b1) Importer(815301076,1909f56bfc062723c751e8b465ee728b)  -> (artifact id: '1ef4f56f63f2ca35d29e76155abc1ece') in 0.017444 seconds 
+========================================================================
+Received Import Request.
+  Time since last request: 3.327368 seconds.
+  path: Assets/Scenario/UI/HUD_YBOT.png
+  artifactKey: Guid(ab934edb69ecca243b47283b0f2860b1) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Scenario/UI/HUD_YBOT.png using Guid(ab934edb69ecca243b47283b0f2860b1) Importer(815301076,1909f56bfc062723c751e8b465ee728b)  -> (artifact id: '1471cdcc5613474de6649326cc3a5c01') in 0.009247 seconds 
+========================================================================
+Received Import Request.
+  Time since last request: 154.529774 seconds.
+  path: Assets/Scenario/UI/HUD_YBOT.png
+  artifactKey: Guid(ab934edb69ecca243b47283b0f2860b1) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Scenario/UI/HUD_YBOT.png using Guid(ab934edb69ecca243b47283b0f2860b1) Importer(815301076,1909f56bfc062723c751e8b465ee728b)  -> (artifact id: 'b5acf5965b3f7eab0f6b7c8e51d85c06') in 0.007628 seconds 
+========================================================================
+Received Import Request.
+  Time since last request: 3.924534 seconds.
+  path: Assets/Scenario/UI/HUD_YBOT.png
+  artifactKey: Guid(ab934edb69ecca243b47283b0f2860b1) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Scenario/UI/HUD_YBOT.png using Guid(ab934edb69ecca243b47283b0f2860b1) Importer(815301076,1909f56bfc062723c751e8b465ee728b)  -> (artifact id: '8d9f1d8f917ef11f03ad4f8c49cea5f7') in 0.012391 seconds 
+========================================================================
+Received Import Request.
+  Time since last request: 684.993941 seconds.
+  path: Assets/Skybox/Textures
+  artifactKey: Guid(f37a2941d481dc848b8bf0471f6e5571) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Skybox/Textures using Guid(f37a2941d481dc848b8bf0471f6e5571) Importer(815301076,1909f56bfc062723c751e8b465ee728b)  -> (artifact id: '3ff41d54f5ede8a629c729ca28fc1faa') in 0.001978 seconds 
+========================================================================
+Received Import Request.
+  Time since last request: 995.309313 seconds.
+  path: Assets/Scenario/UI/health_bar.png
+  artifactKey: Guid(e5bd54777ef2f844184ac7438365bba2) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Scenario/UI/health_bar.png using Guid(e5bd54777ef2f844184ac7438365bba2) Importer(815301076,1909f56bfc062723c751e8b465ee728b)  -> (artifact id: '47e41a9372de0e44f70a921573e31461') in 0.007746 seconds 
+========================================================================
+Received Import Request.
+  Time since last request: 2.674627 seconds.
+  path: Assets/Scenario/UI/health_bar.png
+  artifactKey: Guid(e5bd54777ef2f844184ac7438365bba2) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Scenario/UI/health_bar.png using Guid(e5bd54777ef2f844184ac7438365bba2) Importer(815301076,1909f56bfc062723c751e8b465ee728b)  -> (artifact id: '9954d22dd1cbb3e21bfd048731471aec') in 0.008160 seconds 
+========================================================================
+Received Import Request.
+  Time since last request: 723.834764 seconds.
+  path: Assets/Scenario/UI/health_bar01.png
+  artifactKey: Guid(fda8ded8b0266ec4091452701c9a1f06) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Scenario/UI/health_bar01.png using Guid(fda8ded8b0266ec4091452701c9a1f06) Importer(815301076,1909f56bfc062723c751e8b465ee728b)  -> (artifact id: 'c5185f99c9a9d47cc5497bed07524180') in 0.016337 seconds 
+========================================================================
+Received Import Request.
+  Time since last request: 3.927820 seconds.
+  path: Assets/Scenario/UI/health_bar01.png
+  artifactKey: Guid(fda8ded8b0266ec4091452701c9a1f06) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Scenario/UI/health_bar01.png using Guid(fda8ded8b0266ec4091452701c9a1f06) Importer(815301076,1909f56bfc062723c751e8b465ee728b)  -> (artifact id: '29d519efd23de9b923247dfecc6b491f') in 0.042083 seconds 
+========================================================================
+Received Import Request.
+  Time since last request: 1.157294 seconds.
+  path: Assets/Scenario/UI/health_bar_cover01.png
+  artifactKey: Guid(58e5c64f39dd35c48b968ae3ca12b4a2) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Scenario/UI/health_bar_cover01.png using Guid(58e5c64f39dd35c48b968ae3ca12b4a2) Importer(815301076,1909f56bfc062723c751e8b465ee728b)  -> (artifact id: '68936856a68129d8daca75e0d60afa33') in 0.006601 seconds 
+========================================================================
+Received Import Request.
+  Time since last request: 3.153114 seconds.
+  path: Assets/Scenario/UI/health_bar_cover01.png
+  artifactKey: Guid(58e5c64f39dd35c48b968ae3ca12b4a2) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Scenario/UI/health_bar_cover01.png using Guid(58e5c64f39dd35c48b968ae3ca12b4a2) Importer(815301076,1909f56bfc062723c751e8b465ee728b)  -> (artifact id: '1a4f6322c6d0661574b50419616177a7') in 0.008224 seconds 
+========================================================================
+Received Import Request.
+  Time since last request: 1.319284 seconds.
+  path: Assets/Scenario/UI/health_bar_cover02.png
+  artifactKey: Guid(1a6267dd10232e94ebebc456e1163b9f) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Scenario/UI/health_bar_cover02.png using Guid(1a6267dd10232e94ebebc456e1163b9f) Importer(815301076,1909f56bfc062723c751e8b465ee728b)  -> (artifact id: '167140697183d4b5fef10409d29a5f63') in 0.007049 seconds 
+========================================================================
+Received Import Request.
+  Time since last request: 3.256516 seconds.
+  path: Assets/Scenario/UI/health_bar_cover02.png
+  artifactKey: Guid(1a6267dd10232e94ebebc456e1163b9f) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Scenario/UI/health_bar_cover02.png using Guid(1a6267dd10232e94ebebc456e1163b9f) Importer(815301076,1909f56bfc062723c751e8b465ee728b)  -> (artifact id: 'c794b3f59dd5bc8ed5dce720277b5db5') in 0.006653 seconds 
+========================================================================
+Received Import Request.
+  Time since last request: 432.422904 seconds.
+  path: Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset
+  artifactKey: Guid(8f586378b4e144a9851e7b34d9b748ee) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset using Guid(8f586378b4e144a9851e7b34d9b748ee) Importer(815301076,1909f56bfc062723c751e8b465ee728b)  -> (artifact id: 'f8b7c8c3e3c9a45adbdca63c88707d17') in 0.144378 seconds 
+AssetImportWorkerClient::OnTransportError - code=2 error=End of file
