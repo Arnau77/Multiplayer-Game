@@ -116,18 +116,6 @@ public class NewClient : MonoBehaviour
                 connectionTimer = DateTime.Now.AddMilliseconds(100);
             }
         }
-
-        //if (socketReady)
-        //{
-        //    if (stream.DataAvailable)
-        //    {
-        //        string data = reader.ReadLine();
-        //        if (data != null)
-        //            OnIncomingData(data);
-
-
-        //    }
-        //}
     }
 
     void ClientSendThread()
@@ -226,6 +214,11 @@ public class NewClient : MonoBehaviour
                             {
                                 character.ToWalk(messageReceived.position);
                             }
+
+                            if(messageReceived.input == MessageClass.INPUT.Idle)
+                            {
+                                character.ToIdle();
+                            }
                         }
                         break;
                     case MessageClass.TYPEOFMESSAGE.Connection:
@@ -237,7 +230,10 @@ public class NewClient : MonoBehaviour
                             }
                             clientID = messageReceived.playerID;
                         }
-                        actions.Add(() => onConnectionReceived?.Invoke(messageReceived.playerID));
+                        lock (actionLock)
+                        {
+                            actions.Add(() => onConnectionReceived?.Invoke(messageReceived.playerID));
+                        }
                         if (!positionsDic.ContainsKey(messageReceived.playerID))
                         {
                             positionsDic.Add(messageReceived.playerID, messageReceived.position);
@@ -291,6 +287,12 @@ public class NewClient : MonoBehaviour
                             }
                         }
                         break;
+                    case MessageClass.TYPEOFMESSAGE.Disconnection:
+                        lock (actionLock)
+                        {
+                            actions.Add(() => Quit());
+                        }
+                        break;
                 }
 
                 int index = messageReceived.playerID;
@@ -309,10 +311,6 @@ public class NewClient : MonoBehaviour
         }
     }
 
-    //private void OnIncomingData(string data)
-    //{
-    //    Debug.Log("Server : " + data);
-    //}
 
     public void SendInputMessageToServer(MessageClass.INPUT messageInput, bool sendPos = false, float x = 0, float y = 0, float z = 0)
     {
@@ -332,7 +330,11 @@ public class NewClient : MonoBehaviour
         }
     }
 
-   
+
+    public void Quit()
+    {
+        Application.Quit();
+    }
 
     private void OnDestroy()
     {

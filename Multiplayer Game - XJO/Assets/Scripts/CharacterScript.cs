@@ -17,6 +17,7 @@ public class CharacterScript : MonoBehaviour
     private bool blocking = false;
     private bool toAttack = false;
     private bool toWalk = false;
+    private bool idle = true;
     private Vector3 toWalkVector;
 
     [Header("Attack Info")]
@@ -27,6 +28,7 @@ public class CharacterScript : MonoBehaviour
     public bool startBlocking = false;
     private object attackLock=new object();
     private object walkLock = new object();
+    private object idleLock = new object();
     enum STATE
     {
         SEARCH_STATE,
@@ -137,6 +139,15 @@ public class CharacterScript : MonoBehaviour
                 Walk(toWalkVector);
             }
         }
+        lock (idleLock)
+        {
+            if (idle)
+            {
+                idle = false;
+                animator.SetInteger("DIR", 0);
+            }
+        }
+
     }
 
     void ProcessExternalInput()
@@ -238,6 +249,7 @@ public class CharacterScript : MonoBehaviour
             
             case STATE.IDLE:
                 animator.SetInteger("DIR", 0);
+                client.SendInputMessageToServer(MessageClass.INPUT.Idle);
                 //animator.Play("Fighting Idle");
                 //animator.SetBool("A", false);
                 //animator.SetBool("D", false);
@@ -299,9 +311,18 @@ public class CharacterScript : MonoBehaviour
         lock (walkLock)
         {
             toWalk = true;
-            toWalkVector = vector;
+            toWalkVector = Vector3.Lerp(transform.position, vector, Time.deltaTime);
         }
     }
+
+    public void ToIdle()
+    {
+        lock (idleLock)
+        {
+            idle = true;
+        }
+    }
+
     public void ReceiveDamage()
     {
         if (blocking)

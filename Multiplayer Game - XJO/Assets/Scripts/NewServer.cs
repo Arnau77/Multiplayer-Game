@@ -6,6 +6,7 @@ using System.Net;
 using System;
 using System.IO;
 using UnityEngine.UI;
+using TMPro;
 using System.Text;
 using System.Threading;
 
@@ -30,22 +31,32 @@ public class NewServer : MonoBehaviour
     private object guestLock;
     private object backupLock;
     private object textLock;
+    private object losesJitterLock;
     private object maxPlayersLock;
+    private object disconnectionLock;
     private object confirmedGuestsLock;
     private Thread serverListenThread;
     private Thread serverSendThread;
     private Socket server;
     private bool startPlayed = false;
-    //private static int maxID = 0;
+    private bool disconnectedItself = true;
+    private int totalClientsToDisconnect=0;
+    private DateTime timerDisconnection;
+
     [Space(10)]
     public int maxPlayers;
     private bool morePlayersAllowed = true;
     public int port = 6162; //default port
     public GameObject packetLoss;
     public GameObject jitter;
-    public GameObject lossThreshold;
-    public GameObject minJitt;
-    public GameObject maxJitt;
+    public TMP_InputField lossThreshold;
+    public TMP_InputField minJitt;
+    public TMP_InputField maxJitt;
+    private bool _packetLoss = false;
+    private bool _jitter = false;
+    private int _lossThreshold = 0;
+    private int _minJit = 0;
+    private int _maxJit = 0;
 
     private bool serverconnected; //server started or not
 
@@ -78,27 +89,16 @@ public class NewServer : MonoBehaviour
         }
     }
 
-    //definition of who connects to the server
-    //public class ServerClient
-    //{
-    //    public EndPoint remoteEP;
-    //    public int clientID;
-
-    //    public ServerClient(EndPoint clientsocket)
-    //    {
-    //        clientID = maxID++;
-    //        remoteEP = clientsocket;
-    //    }
-    //}
-
     private void Start()
     {
         actionLock = new object();
         guestLock = new object();
         textLock = new object();
         backupLock = new object();
+        losesJitterLock = new object();
         confirmedGuestsLock = new object();
         maxPlayersLock = new object();
+        disconnectionLock = new object();
 
         guests = new List<EndPoint>();
         unconfirmedGuests = new List<int>();
@@ -121,6 +121,16 @@ public class NewServer : MonoBehaviour
         {
             return;
         }
+
+        lock (losesJitterLock)
+        {
+            _packetLoss = packetLoss.GetComponent<Toggle>().isOn;
+            _jitter = jitter.GetComponent<Toggle>().isOn;
+            _minJit = Int32.Parse(minJitt.text);
+            _maxJit = Int32.Parse(maxJitt.text);
+            _lossThreshold = Int32.Parse(lossThreshold.text);
+        }
+
         lock (actionLock)
         {
             //we clean the list of ongoing actions 
@@ -157,29 +167,7 @@ public class NewServer : MonoBehaviour
             }
         }
 
-
-        //foreach (ServerClient g in guests) //g name of the server client
-        //{
-        //    if (!IsConnected(g.remoteEP)) //is the guest still connected?
-        //    {
-        //        g.remoteEP.Close();
-        //        disconnections.Add(g); //we add the guest to the disconnected list, maybe useful for a reconnection?
-        //        continue;
-        //    }
-        //    else //checking for messages from the guest
-        //    {
-        //        NetworkStream s = g.remoteEP.GetStream();
-        //        if (s.DataAvailable)
-        //        {
-        //            StreamReader reader = new StreamReader(s, true);
-        //            string data = reader.ReadLine();
-        //            if (data != null)
-        //            {
-        //                OnIncomingData(g, data);
-        //            }
-        //        }
-        //    }
-        //}
+        
     }
 
 
@@ -316,7 +304,7 @@ public class NewServer : MonoBehaviour
                             if (unconfirmedGuests.Contains(id))
                             {
                                 unconfirmedGuests.Remove(id);
-                                if (unconfirmedGuests.Count == 0)
+                                if (unconfirmedGuests.Count == 0 && !morePlayersAllowed)
                                 {
                                     waitingGuests.Remove(-2);
                                     for (int i = 0; i < maxPlayers; i++)
@@ -326,6 +314,13 @@ public class NewServer : MonoBehaviour
                                 }
                             }
                             
+                        }
+                        if (messageReceived.playerID == -2)
+                        {
+                            lock (disconnectionLock)
+                            {
+                                totalClientsToDisconnect--;
+                            }
                         }
                         Dictionary<InfoOfBackupMessages, string> backupOfTheBackup;
                         lock (backupLock)
@@ -448,17 +443,29 @@ public class NewServer : MonoBehaviour
                         }
                     }
 
+                    bool pL, j;
+                    int plT, mJ, mxJ;
+
+                    lock(losesJitterLock)
+                    {
+                        pL = _packetLoss;
+                        j = _jitter;
+                        mJ = _minJit;
+                        mxJ = _maxJit;
+                        plT = _lossThreshold;
+                    }
+
                     //FIRST PACKET LOSS
-                    if (packetLoss.GetComponent<Toggle>().isOn && r.Next(0, 100) <= Int32.Parse(lossThreshold.GetComponent<InputField>().text))
+                    if (pL && r.Next(0, 100) <= plT)
                     {
                         if(type!=MessageClass.TYPEOFMESSAGE.Acknowledgment)
                             Debug.LogWarning("Message Lost by server: " + localTexts[i].text);
                         continue;
                     }
                     //THEN JITTER
-                    if (jitter.GetComponent<Toggle>().isOn)
+                    if (j)
                     {
-                        localTexts[i].timeToSendMessage = DateTime.Now.AddMilliseconds(r.Next(Int32.Parse(minJitt.GetComponent<InputField>().text), Int32.Parse(maxJitt.GetComponent<InputField>().text)));
+                        localTexts[i].timeToSendMessage = DateTime.Now.AddMilliseconds(r.Next(mJ,mxJ));
                     }
                     localTexts[i].jitterApplied = true;
                 }
@@ -519,66 +526,44 @@ public class NewServer : MonoBehaviour
             }
         }
     }
-    //private bool IsConnected(EndPoint g) //we call the guest again and we try to reach it
-    //{
-    //    try
-    //    {
-    //        if (g != null && g.Client != null && g.Client.Connected)
-    //        {
-    //            if (g.Client.Poll(0, SelectMode.SelectRead))
-    //            {
-    //                return !(g.Client.Receive(new byte[4], SocketFlags.Peek) == 0); //don't really understand how these lines work SORRY
-    //            }
 
-    //            return true;
-    //        }
-    //        else
-    //            return false;
-    //    }
-    //    catch
-    //    {
-    //        return false;
-    //    }
-    //}
-
-    //private void ServerListening()
-    //{
-    //    server.BeginAcceptTcpClient(AcceptTcpClient, server);
-    //}
-
-    //private void AcceptTcpClient(IAsyncResult ar) //we accept a client to connect to the server
-    //{
-    //    TcpListener listener = (TcpListener)ar.AsyncState;
-    //    guests.Add(new ServerClient(listener.EndAcceptTcpClient(ar))); //adding a client to the list
-    //    ServerListening();
-
-    //    //Send a message here to everyone to let know somebody has connected maybe?
-    //    Broadcast(guests[guests.Count - 1].clientName + "has connected", guests);
-    //}
-
-    //private void OnIncomingData(ServerClient g, string data)
-    //{
-    //    Debug.Log(g.clientName + " has sent the following data: " + data);
-    //}
-    //private void Broadcast(string data, List<ServerClient> cl)
-    //{
-    //    foreach (ServerClient g in cl)
-    //    {
-    //        try
-    //        {
-    //            StreamWriter writer = new StreamWriter(g.remoteEP.GetStream());
-    //            writer.WriteLine(data);
-    //            writer.Flush();
-    //        }
-    //        catch (Exception e)
-    //        {
-    //            Debug.Log("Write error : " + e.Message + "to client " + g.clientName);
-    //        }
-    //    }
-    //}
+    public void SendDisconnectionMessage(int clientID)
+    {
+        MessageClass message = new MessageClass(0, -2, MessageClass.TYPEOFMESSAGE.Disconnection, DateTime.Now);
+        lock (textLock)
+        {
+            textsToSend.Add(new TextWithID(message.Serialize(), clientID));
+        }
+    }
 
     private void OnDestroy()
     {
+        if (disconnectedItself)
+        {
+            int initialClients;
+            int localClientsToDisconnect;
+            lock (disconnectionLock)
+            {
+                lock (guestLock)
+                {
+                    totalClientsToDisconnect = guests.Count;
+                }
+                initialClients = totalClientsToDisconnect;
+                localClientsToDisconnect = initialClients;
+            }
+            while (localClientsToDisconnect > 0)
+            {
+                for(int i = 0; i < initialClients; i++)
+                {
+                    SendDisconnectionMessage(i);
+                }
+                lock (disconnectionLock)
+                {
+                    localClientsToDisconnect = totalClientsToDisconnect;
+                }
+            }
+            
+        }
         serverListenThread.Abort();
         serverSendThread.Abort();
         server.Close();
