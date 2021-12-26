@@ -309,12 +309,16 @@
 -r:"Library/Bee/artifacts/500b0aE.dag/Unity.VSCode.Editor.ref.dll"
 -r:"Library/Bee/artifacts/500b0aE.dag/UnityEditor.UI.ref.dll"
 -r:"Library/Bee/artifacts/500b0aE.dag/UnityEngine.UI.ref.dll"
+"Assets/Destructible.cs"
+"Assets/GameManager.cs"
+"Assets/LobbyManager.cs"
 "Assets/Scripts/CharacterScript.cs"
 "Assets/Scripts/MessageClass.cs"
 "Assets/Scripts/NewClient.cs"
 "Assets/Scripts/NewServer.cs"
 "Assets/Scripts/SceneTransitionScript.cs"
 "Assets/Scripts/Scene_Manager.cs"
+"Assets/UIManager.cs"
 -langversion:8.0
 
 /deterministic
