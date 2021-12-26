@@ -238,6 +238,7 @@ public class CharacterScript : MonoBehaviour
             
             case STATE.IDLE:
                 animator.SetInteger("DIR", 0);
+                client.SendInputMessageToServer(MessageClass.INPUT.Idle);
                 //animator.Play("Fighting Idle");
                 //animator.SetBool("A", false);
                 //animator.SetBool("D", false);
@@ -299,7 +300,7 @@ public class CharacterScript : MonoBehaviour
         lock (walkLock)
         {
             toWalk = true;
-            toWalkVector = vector;
+            toWalkVector = Vector3.Lerp(transform.position, vector, Time.deltaTime);
         }
     }
     public void ReceiveDamage()

@@ -6,6 +6,7 @@ using System.Net;
 using System;
 using System.IO;
 using UnityEngine.UI;
+using TMPro;
 using System.Text;
 using System.Threading;
 
@@ -18,7 +19,8 @@ public class NewServer : MonoBehaviour
 
 
     private List<EndPoint> guests; //keeps track of the connections
-    private List<EndPoint> disconnections; //keeps track of disconnections
+    private List<int> unconfirmedGuests;
+    private List<int> waitingGuests;
     private List<Action> actions = new List<Action>();
     private List<TextWithID> textsToSend = new List<TextWithID>();
     private List<TextWithID> backupTexts = new List<TextWithID>();
@@ -29,9 +31,13 @@ public class NewServer : MonoBehaviour
     private object guestLock;
     private object backupLock;
     private object textLock;
+    private object losesJitterLock;
+    private object maxPlayersLock;
+    private object confirmedGuestsLock;
     private Thread serverListenThread;
     private Thread serverSendThread;
     private Socket server;
+    private bool startPlayed = false;
     //private static int maxID = 0;
     [Space(10)]
     public int maxPlayers;
@@ -39,9 +45,14 @@ public class NewServer : MonoBehaviour
     public int port = 6162; //default port
     public GameObject packetLoss;
     public GameObject jitter;
-    public GameObject lossThreshold;
-    public GameObject minJitt;
-    public GameObject maxJitt;
+    public TMP_InputField lossThreshold;
+    public TMP_InputField minJitt;
+    public TMP_InputField maxJitt;
+    private bool _packetLoss = false;
+    private bool _jitter = false;
+    private int _lossThreshold = 0;
+    private int _minJit = 0;
+    private int _maxJit = 0;
 
     private bool serverconnected; //server started or not
 
@@ -93,10 +104,15 @@ public class NewServer : MonoBehaviour
         guestLock = new object();
         textLock = new object();
         backupLock = new object();
-
+        losesJitterLock = new object();
+        confirmedGuestsLock = new object();
+        maxPlayersLock = new object();
 
         guests = new List<EndPoint>();
-        disconnections = new List<EndPoint>();
+        unconfirmedGuests = new List<int>();
+        waitingGuests = new List<int>();
+        waitingGuests.Add(-2);
+
         server = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         serverListenThread = new Thread(ServerListenThread);
         serverSendThread = new Thread(ServerSendThread);
@@ -113,6 +129,16 @@ public class NewServer : MonoBehaviour
         {
             return;
         }
+
+        lock (losesJitterLock)
+        {
+            _packetLoss = packetLoss.GetComponent<Toggle>().isOn;
+            _jitter = jitter.GetComponent<Toggle>().isOn;
+            _minJit = Int32.Parse(minJitt.text);
+            _maxJit = Int32.Parse(maxJitt.text);
+            _lossThreshold = Int32.Parse(lossThreshold.text);
+        }
+
         lock (actionLock)
         {
             //we clean the list of ongoing actions 
@@ -123,14 +149,32 @@ public class NewServer : MonoBehaviour
                 action();
             }
         }
-        if (Input.GetKeyDown(KeyCode.N))
+        lock (maxPlayersLock)
         {
-            lock (textLock)
+            if (morePlayersAllowed || unconfirmedGuests.Count != 0)
             {
-                MessageClass message = new MessageClass(0, 0, MessageClass.TYPEOFMESSAGE.Disconnection, DateTime.Now);
-                textsToSend.Add(new TextWithID(message.Serialize(),0));
+                lock (confirmedGuestsLock)
+                {
+                    for(int i = 0; i < unconfirmedGuests.Count; i++) {
+                        SendConnectionMessage(unconfirmedGuests[i], false);
+                    }
+                }
+            }
+            else if(!startPlayed)
+            {
+                lock (confirmedGuestsLock)
+                {
+                    for(int i = 0; i < maxPlayers; i++)
+                    {
+                        if (waitingGuests.Contains(i))
+                        {
+                            SendConnectionMessage(i, true);
+                        }
+                    }
+                }
             }
         }
+
 
         //foreach (ServerClient g in guests) //g name of the server client
         //{
@@ -173,7 +217,11 @@ public class NewServer : MonoBehaviour
             //we make the connection with the client and it sends a message, we decode it and if its "ping" the message we proceed to make an output
             int size = server.ReceiveFrom(buffer, ref clientPoint);
             MessageClass messageReceived = new MessageClass(Encoding.ASCII.GetString(buffer));
-            int id = guests.FindIndex(client => client.Equals(clientPoint));
+            int id;
+            lock (guestLock)
+            {
+                id = guests.FindIndex(client => client.Equals(clientPoint));
+            }
             bool checkIfThereAreMessagesLost = true;
             switch (messageReceived.typeOfMessage)
             {
@@ -188,9 +236,16 @@ public class NewServer : MonoBehaviour
                                 id = guests.Count;
                                 localClients = new List<EndPoint>(guests);
                             }
+                            lock (unconfirmedGuests)
+                            {
+                                unconfirmedGuests.Add(id-1);
+                            }
                             if (id-- >= maxPlayers)
                             {
-                                morePlayersAllowed = false;
+                                lock (maxPlayersLock)
+                                {
+                                    morePlayersAllowed = false;
+                                }
                             }
 
                             if (id== 0)
@@ -207,40 +262,9 @@ public class NewServer : MonoBehaviour
                                     actions.Add(() => playername2.SetActive(true));
                                 }
                             }
-
-             
-
                             Debug.Log("NEwwW CLIENT");
-                            for (int i = 0; i < localClients.Count; i++)
-                            {
-                                Vector3 pos;
-                                if (id == 0)
-                                {
-                                    pos = new Vector3(7, 0, -19);
-
-                                }
-                                else
-                                {
-                                    pos = new Vector3(17, 0, -19);
-                                }
-
-                                MessageClass message = new MessageClass(messageReceived.id, id, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now, pos);
-                                lock (textLock)
-                                {
-                                    textsToSend.Add(new TextWithID(message.Serialize(), i));
-                                }
-                            }
-
-                            for (int i = 0; i < guests.Count -1; i++)
-                            {
-                                Vector3 pos = new Vector3(7, 0, -19);                                
-                                
-                                MessageClass message = new MessageClass(0, i, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now, pos);
-                                lock (textLock)
-                                {
-                                    textsToSend.Add(new TextWithID(message.Serialize(), id));
-                                }
-                            }
+                            SendConnectionMessage(id, false);
+                            
                         }
                         checkIfThereAreMessagesLost = false;
 
@@ -297,6 +321,30 @@ public class NewServer : MonoBehaviour
                 case MessageClass.TYPEOFMESSAGE.Acknowledgment:
                     {
                         checkIfThereAreMessagesLost = false;
+                        lock (confirmedGuestsLock)
+                        {
+                            if (waitingGuests.Contains(id))
+                            {
+                                waitingGuests.Remove(id);
+                                if (waitingGuests.Count == 0)
+                                {
+                                    startPlayed = true;
+                                }
+                            }
+                            if (unconfirmedGuests.Contains(id))
+                            {
+                                unconfirmedGuests.Remove(id);
+                                if (unconfirmedGuests.Count == 0)
+                                {
+                                    waitingGuests.Remove(-2);
+                                    for (int i = 0; i < maxPlayers; i++)
+                                    {
+                                        waitingGuests.Add(i);
+                                    }
+                                }
+                            }
+                            
+                        }
                         Dictionary<InfoOfBackupMessages, string> backupOfTheBackup;
                         lock (backupLock)
                         {
@@ -418,17 +466,29 @@ public class NewServer : MonoBehaviour
                         }
                     }
 
+                    bool pL, j;
+                    int plT, mJ, mxJ;
+
+                    lock(losesJitterLock)
+                    {
+                        pL = _packetLoss;
+                        j = _jitter;
+                        mJ = _minJit;
+                        mxJ = _maxJit;
+                        plT = _lossThreshold;
+                    }
+
                     //FIRST PACKET LOSS
-                    if (packetLoss.GetComponent<Toggle>().isOn && r.Next(0, 100) <= Int32.Parse(lossThreshold.GetComponent<InputField>().text))
+                    if (pL && r.Next(0, 100) <= plT)
                     {
                         if(type!=MessageClass.TYPEOFMESSAGE.Acknowledgment)
                             Debug.LogWarning("Message Lost by server: " + localTexts[i].text);
                         continue;
                     }
                     //THEN JITTER
-                    if (jitter.GetComponent<Toggle>().isOn)
+                    if (j)
                     {
-                        localTexts[i].timeToSendMessage = DateTime.Now.AddMilliseconds(r.Next(Int32.Parse(minJitt.GetComponent<InputField>().text), Int32.Parse(maxJitt.GetComponent<InputField>().text)));
+                        localTexts[i].timeToSendMessage = DateTime.Now.AddMilliseconds(r.Next(mJ,mxJ));
                     }
                     localTexts[i].jitterApplied = true;
                 }
@@ -444,6 +504,50 @@ public class NewServer : MonoBehaviour
             localClients.Clear();
         }
 
+    }
+
+    public void SendConnectionMessage(int playerID, bool multipleMessages)
+    {
+        Vector3 pos;
+        if (playerID == 0)
+        {
+            pos = new Vector3(7, 0, -19);
+
+        }
+        else
+        {
+            pos = new Vector3(17, 0, -19);
+        }
+
+        MessageClass message = new MessageClass(0, playerID, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now, pos);
+        lock (textLock)
+        {
+            textsToSend.Add(new TextWithID(message.Serialize(), playerID));
+        }
+
+        if (!multipleMessages)
+            return;
+        lock (guestLock)
+        {
+            for (int i = 0; i < guests.Count; i++)
+            {
+                if (i == 0)
+                {
+                    pos = new Vector3(17, 0, -19);
+
+                }
+                else
+                {
+                    pos = new Vector3(7, 0, -19);
+                }
+
+                message = new MessageClass(0, i == 0 ? 1 : 0, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now, pos);
+                lock (textLock)
+                {
+                    textsToSend.Add(new TextWithID(message.Serialize(), i));
+                }
+            }
+        }
     }
     //private bool IsConnected(EndPoint g) //we call the guest again and we try to reach it
     //{
