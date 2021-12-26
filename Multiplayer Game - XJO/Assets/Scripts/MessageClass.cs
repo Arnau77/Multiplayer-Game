@@ -240,7 +240,7 @@ public class MessageClass
         else if (clientID !=index)
         {
             lastMessageID = listOfMessages[index];
-            if (idMessage < lastMessageID)
+            if (idMessage < lastMessageID && listOfMessagesLost.Contains(idMessage))
             {
                 listOfMessagesLost.Remove(idMessage);
                 fullListOfMessagesLost[index] = listOfMessagesLost;

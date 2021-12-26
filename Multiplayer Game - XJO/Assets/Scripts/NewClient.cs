@@ -23,6 +23,7 @@ public class NewClient : MonoBehaviour
     private object actionLock;
     private object backupLock;
     private object textLock;
+    private object disconnectionLock;
     private object messageReceivedLock;
     private Thread clientListenThread;
     private Thread clientSendThread;
@@ -34,7 +35,10 @@ public class NewClient : MonoBehaviour
     private bool connected = false;
     private uint messageID = 0;
     private DateTime connectionTimer;
+    private bool disconnectItself = true;
+    private bool disconnectionAcknowledged = false;
     public int clientID = -1;
+    public int maxTimeout = 5000;
 
     public bool packetLoss = false;
     public bool jitter = false;
@@ -72,6 +76,7 @@ public class NewClient : MonoBehaviour
         textLock = new object();
         backupLock = new object();
         messageReceivedLock = new object();
+        disconnectionLock = new object();
         MessageClass message = new MessageClass(messageID++, clientID, MessageClass.TYPEOFMESSAGE.Connection, DateTime.Now, new Vector3(0,0,0));
         textsToSend.Add(new MessageWithPossibleJitter(message.Serialize()));
     }
@@ -174,6 +179,7 @@ public class NewClient : MonoBehaviour
                     backupTexts.Add(localTexts[i]);
                     continue;
                 }
+                buffer = new byte[1000];
                 buffer = Encoding.ASCII.GetBytes(localTexts[i].text);
                 socket.SendTo(buffer, buffer.Length, SocketFlags.None, ipDestination);
                 firstMessageSent = true;
@@ -185,7 +191,7 @@ public class NewClient : MonoBehaviour
 
     void ClientListenThread()
     {
-        byte[] buffer = new byte[100];
+        byte[] buffer = new byte[1000];
         while (true)
         {
             if (firstMessageSent)
@@ -288,12 +294,24 @@ public class NewClient : MonoBehaviour
                         }
                         break;
                     case MessageClass.TYPEOFMESSAGE.Disconnection:
-                        lock (actionLock)
+                        if (messageReceived.playerID==-2)
                         {
-                            actions.Add(() => Quit());
+                            disconnectItself = false;
+                            lock (actionLock)
+                            {
+                                actions.Add(() => Quit());
+                            }
+                        }
+                        else if (messageReceived.playerID == clientID)
+                        {
+                            lock (disconnectionLock)
+                            {
+                                disconnectionAcknowledged = true;
+                            }
                         }
                         break;
                 }
+                Debug.LogWarning(messageReceived.typeOfMessage + ";   ");
 
                 int index = messageReceived.playerID;
                 List<MessageClass> newMessages= MessageClass.CheckIfThereAreMessagesLost(ref listOfMessagesReceived, ref listOfMessagesNeeded, messageReceived, index,checkIfThereAreMessagesLost, clientID);
@@ -336,8 +354,35 @@ public class NewClient : MonoBehaviour
         Application.Quit();
     }
 
+    public void SendDisconnectionMessage()
+    {
+        MessageClass message = new MessageClass(0, clientID, MessageClass.TYPEOFMESSAGE.Disconnection, DateTime.Now);
+        lock (textLock)
+        {
+            textsToSend.Add(new MessageWithPossibleJitter(message.Serialize()));
+        }
+        Thread.Sleep(50);
+    }
+
     private void OnDestroy()
     {
+        if (disconnectItself && clientID > -1)
+        {
+            DateTime disconnectionTime = DateTime.Now.AddMilliseconds(maxTimeout);
+            bool acknowledgment;
+            lock (disconnectionLock)
+            {
+                acknowledgment = disconnectionAcknowledged;
+            }
+            while (!acknowledgment && disconnectionTime>=DateTime.Now)
+            {
+                lock (disconnectionLock)
+                {
+                    acknowledgment = disconnectionAcknowledged;
+                }
+                SendDisconnectionMessage();
+            }
+        }
         clientSendThread.Abort();
         clientListenThread.Abort();
         socket.Close();
