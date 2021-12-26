@@ -17,6 +17,7 @@ public class CharacterScript : MonoBehaviour
     private bool blocking = false;
     private bool toAttack = false;
     private bool toWalk = false;
+    private bool toBlock = false;
     private bool idle = true;
     private Vector3 toWalkVector;
 
@@ -29,6 +30,7 @@ public class CharacterScript : MonoBehaviour
     private object attackLock=new object();
     private object walkLock = new object();
     private object idleLock = new object();
+    private object blockLock = new object();
     enum STATE
     {
         SEARCH_STATE,
@@ -112,7 +114,18 @@ public class CharacterScript : MonoBehaviour
                 client.SendInputMessageToServer(MessageClass.INPUT.Attack);
             }
         }
-        //blocking = Input.GetKey(KeyCode.B);
+        if (client.clientID == ID)
+        {
+            bool nowBlocking = blocking;
+            blocking = Input.GetKey(KeyCode.B);
+            if (nowBlocking != blocking)
+            {
+                if(blocking)
+                    client.SendInputMessageToServer(MessageClass.INPUT.Block);
+                else
+                    client.SendInputMessageToServer(MessageClass.INPUT.Idle);
+            }
+        }
         //animator.SetBool("Blocking", blocking);
         if (client.clientID == ID)
         {
@@ -127,15 +140,27 @@ public class CharacterScript : MonoBehaviour
         {
             if (toAttack)
             {
+                blocking = false;
                 toAttack = false;
                 Attack();
+            }
+        }
+
+        lock (blockLock)
+        {
+            if (toBlock)
+            {
+                toBlock = false;
+                blocking = true;
             }
         }
         lock (walkLock)
         {
             if (toWalk)
             {
+                blocking = false;
                 toWalk = false;
+                toWalkVector = Vector3.Lerp(transform.position, toWalkVector, Time.deltaTime);
                 Walk(toWalkVector);
             }
         }
@@ -143,10 +168,13 @@ public class CharacterScript : MonoBehaviour
         {
             if (idle)
             {
+                blocking = false;
                 idle = false;
                 animator.SetInteger("DIR", 0);
             }
         }
+
+        animator.SetBool("Blocking", blocking);
 
     }
 
@@ -208,6 +236,7 @@ public class CharacterScript : MonoBehaviour
                     {
                         case INPUT_STATE.IN_IDLE:
                             currentState = STATE.IDLE;
+                            client.SendInputMessageToServer(MessageClass.INPUT.Idle);
                             break;
                         case INPUT_STATE.IN_HIT:
                             currentState = STATE.HIT;
@@ -222,6 +251,7 @@ public class CharacterScript : MonoBehaviour
                     {
                         case INPUT_STATE.IN_IDLE:
                             currentState = STATE.IDLE;
+                            client.SendInputMessageToServer(MessageClass.INPUT.Idle);
                             break;
                     }
                     break;
@@ -234,6 +264,7 @@ public class CharacterScript : MonoBehaviour
                                 return;
                             }
                             currentState = STATE.IDLE;
+                            client.SendInputMessageToServer(MessageClass.INPUT.Idle);
                             break;
                     }
                     break;
@@ -249,7 +280,6 @@ public class CharacterScript : MonoBehaviour
             
             case STATE.IDLE:
                 animator.SetInteger("DIR", 0);
-                client.SendInputMessageToServer(MessageClass.INPUT.Idle);
                 //animator.Play("Fighting Idle");
                 //animator.SetBool("A", false);
                 //animator.SetBool("D", false);
@@ -311,7 +341,15 @@ public class CharacterScript : MonoBehaviour
         lock (walkLock)
         {
             toWalk = true;
-            toWalkVector = Vector3.Lerp(transform.position, vector, Time.deltaTime);
+            toWalkVector = vector;
+        }
+    }
+
+    public void ToBlock()
+    {
+        lock (blockLock)
+        {
+            toBlock = true;
         }
     }
 

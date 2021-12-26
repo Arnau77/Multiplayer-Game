@@ -216,6 +216,11 @@ public class NewClient : MonoBehaviour
                                 character.ToAttacK();
                             }
 
+                            if (messageReceived.input == MessageClass.INPUT.Block)
+                            {
+                                character.ToBlock();
+                            }
+
                             if (messageReceived.input == MessageClass.INPUT.Move)
                             {
                                 character.ToWalk(messageReceived.position);

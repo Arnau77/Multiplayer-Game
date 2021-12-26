@@ -17,6 +17,7 @@ public class MessageClass
     {
         Move,
         Attack,
+        Block,
         Idle
     }
 
