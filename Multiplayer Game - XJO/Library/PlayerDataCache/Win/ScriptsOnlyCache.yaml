@@ -1,17 +1,12 @@
 ScriptsOnlyBuild:
   usedScripts:
     Assembly-CSharp.dll:
-    - CharacterScript
-    - Destructible
-    - GameManager
-    - LobbyManager
-    - NewClient
-    - Scene_Manager
-    - UIManager
+    - NewServer
     Unity.Rider.Editor.dll:
     - Packages.Rider.Editor.UnitTesting.CallbackData
     Unity.TextMeshPro.dll:
     - TMPro.TMP_FontAsset
+    - TMPro.TMP_InputField
     - TMPro.TMP_Settings
     - TMPro.TMP_SpriteAsset
     - TMPro.TMP_StyleSheet
@@ -29,108 +24,16 @@ ScriptsOnlyBuild:
     UnityEngine.UI.dll:
     - UnityEngine.EventSystems.EventSystem
     - UnityEngine.EventSystems.StandaloneInputModule
-    - UnityEngine.UI.Button
     - UnityEngine.UI.CanvasScaler
     - UnityEngine.UI.GraphicRaycaster
     - UnityEngine.UI.HorizontalLayoutGroup
     - UnityEngine.UI.Image
-    - UnityEngine.UI.InputField
     - UnityEngine.UI.LayoutElement
+    - UnityEngine.UI.RectMask2D
     - UnityEngine.UI.Text
-    - UnityEngine.UI.VerticalLayoutGroup
+    - UnityEngine.UI.Toggle
   sceneClasses:
-    Assets/Scenes/FightArena.unity:
-    - Class: 1
-      Script: {instanceID: 0}
-    - Class: 4
-      Script: {instanceID: 0}
-    - Class: 20
-      Script: {instanceID: 0}
-    - Class: 21
-      Script: {instanceID: 0}
-    - Class: 23
-      Script: {instanceID: 0}
-    - Class: 28
-      Script: {instanceID: 0}
-    - Class: 33
-      Script: {instanceID: 0}
-    - Class: 43
-      Script: {instanceID: 0}
-    - Class: 48
-      Script: {instanceID: 0}
-    - Class: 65
-      Script: {instanceID: 0}
-    - Class: 74
-      Script: {instanceID: 0}
-    - Class: 81
-      Script: {instanceID: 0}
-    - Class: 90
-      Script: {instanceID: 0}
-    - Class: 91
-      Script: {instanceID: 0}
-    - Class: 95
-      Script: {instanceID: 0}
-    - Class: 104
-      Script: {instanceID: 0}
-    - Class: 108
-      Script: {instanceID: 0}
-    - Class: 111
-      Script: {instanceID: 0}
-    - Class: 114
-      Script: {instanceID: 1500}
-    - Class: 114
-      Script: {instanceID: 1636}
-    - Class: 114
-      Script: {instanceID: 1690}
-    - Class: 114
-      Script: {instanceID: 1738}
-    - Class: 114
-      Script: {instanceID: 1802}
-    - Class: 114
-      Script: {instanceID: 2128}
-    - Class: 114
-      Script: {instanceID: 2344}
-    - Class: 114
-      Script: {instanceID: 2444}
-    - Class: 114
-      Script: {instanceID: 2484}
-    - Class: 114
-      Script: {instanceID: 2592}
-    - Class: 114
-      Script: {instanceID: 2770}
-    - Class: 114
-      Script: {instanceID: 2848}
-    - Class: 114
-      Script: {instanceID: 3088}
-    - Class: 114
-      Script: {instanceID: 3350}
-    - Class: 114
-      Script: {instanceID: 3846}
-    - Class: 114
-      Script: {instanceID: 3962}
-    - Class: 115
-      Script: {instanceID: 0}
-    - Class: 128
-      Script: {instanceID: 0}
-    - Class: 137
-      Script: {instanceID: 0}
-    - Class: 143
-      Script: {instanceID: 0}
-    - Class: 157
-      Script: {instanceID: 0}
-    - Class: 196
-      Script: {instanceID: 0}
-    - Class: 213
-      Script: {instanceID: 0}
-    - Class: 222
-      Script: {instanceID: 0}
-    - Class: 223
-      Script: {instanceID: 0}
-    - Class: 224
-      Script: {instanceID: 0}
-    - Class: 850595691
-      Script: {instanceID: 0}
-    Assets/Scenes/Start.unity:
+    Assets/Scenes/Server.unity:
     - Class: 1
       Script: {instanceID: 0}
     - Class: 4
@@ -145,54 +48,46 @@ ScriptsOnlyBuild:
       Script: {instanceID: 0}
     - Class: 49
       Script: {instanceID: 0}
-    - Class: 74
-      Script: {instanceID: 0}
     - Class: 81
-      Script: {instanceID: 0}
-    - Class: 89
-      Script: {instanceID: 0}
-    - Class: 91
-      Script: {instanceID: 0}
-    - Class: 95
       Script: {instanceID: 0}
     - Class: 104
       Script: {instanceID: 0}
     - Class: 108
       Script: {instanceID: 0}
     - Class: 114
-      Script: {instanceID: 1500}
+      Script: {instanceID: 1526}
     - Class: 114
-      Script: {instanceID: 1636}
+      Script: {instanceID: 1544}
     - Class: 114
-      Script: {instanceID: 1738}
+      Script: {instanceID: 1586}
     - Class: 114
-      Script: {instanceID: 1802}
+      Script: {instanceID: 1656}
     - Class: 114
-      Script: {instanceID: 2050}
+      Script: {instanceID: 1668}
     - Class: 114
-      Script: {instanceID: 2060}
+      Script: {instanceID: 1716}
     - Class: 114
-      Script: {instanceID: 2192}
+      Script: {instanceID: 1780}
     - Class: 114
-      Script: {instanceID: 2334}
+      Script: {instanceID: 2028}
     - Class: 114
-      Script: {instanceID: 2344}
+      Script: {instanceID: 2038}
     - Class: 114
-      Script: {instanceID: 2444}
+      Script: {instanceID: 2322}
     - Class: 114
-      Script: {instanceID: 2484}
+      Script: {instanceID: 2422}
     - Class: 114
-      Script: {instanceID: 2592}
+      Script: {instanceID: 2462}
     - Class: 114
-      Script: {instanceID: 2632}
+      Script: {instanceID: 2570}
     - Class: 114
-      Script: {instanceID: 2770}
+      Script: {instanceID: 2748}
     - Class: 114
-      Script: {instanceID: 2848}
+      Script: {instanceID: 3680}
     - Class: 114
-      Script: {instanceID: 3716}
+      Script: {instanceID: 3694}
     - Class: 114
-      Script: {instanceID: 3956}
+      Script: {instanceID: 3934}
     - Class: 115
       Script: {instanceID: 0}
     - Class: 128
@@ -224,7 +119,7 @@ ScriptsOnlyBuild:
     className: PanelRaycaster
   - hash:
       serializedVersion: 2
-      Hash: da325ee8535da67108358017ba11ba66
+      Hash: e2b2302dcce0801d7c7427f43e477b67
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: NewServer
@@ -704,7 +599,5 @@ ScriptsOnlyBuild:
     className: TouchInputModule
   platform: 5
   scenePathNames:
-  - Assets/Scenes/Start.unity
-  - Assets/Scenes/FightArena.unity
-  playerPath: C:/Users/roger/OneDrive/Desktop/Multiplayer Game Clients/Multiplayer
-    Game - XJO.exe
+  - Assets/Scenes/Server.unity
+  playerPath: C:/Users/roger/OneDrive/Desktop/Mult-Server/Multiplayer Game - XJO.exe
