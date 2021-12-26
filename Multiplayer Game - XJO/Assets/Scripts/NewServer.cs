@@ -34,14 +34,12 @@ public class NewServer : MonoBehaviour
     private object textLock;
     private object losesJitterLock;
     private object maxPlayersLock;
-    private object disconnectionLock;
     private object confirmedGuestsLock;
     private Thread serverListenThread;
     private Thread serverSendThread;
     private Socket server;
     private bool startPlayed = false;
     private bool disconnectedItself = true;
-    private int totalClientsToDisconnect=0;
     private DateTime timerDisconnection;
     public int maxTimeout = 5000;
 
@@ -59,7 +57,7 @@ public class NewServer : MonoBehaviour
     private int _lossThreshold = 0;
     private int _minJit = 0;
     private int _maxJit = 0;
-    public int capMessagesNeeded = 60;
+    public int capMessagesNeeded = 20;
 
     private bool serverconnected; //server started or not
 
@@ -101,7 +99,6 @@ public class NewServer : MonoBehaviour
         losesJitterLock = new object();
         confirmedGuestsLock = new object();
         maxPlayersLock = new object();
-        disconnectionLock = new object();
 
         guests = new List<EndPoint>();
         unconfirmedGuests = new List<int>();
@@ -312,7 +309,7 @@ public class NewServer : MonoBehaviour
                         checkIfThereAreMessagesLost = false;
                         lock (confirmedGuestsLock)
                         {
-                            if (waitingGuests.Contains(id))
+                            if (waitingGuests.Contains(id) && id != messageReceived.playerID)
                             {
                                 waitingGuests.Remove(id);
                                 if (waitingGuests.Count == 0)
@@ -333,13 +330,6 @@ public class NewServer : MonoBehaviour
                                 }
                             }
                             
-                        }
-                        if (messageReceived.playerID == -2)
-                        {
-                            lock (disconnectionLock)
-                            {
-                                totalClientsToDisconnect--;
-                            }
                         }
                         Dictionary<InfoOfBackupMessages, string> backupOfTheBackup;
                         lock (backupLock)
@@ -380,9 +370,12 @@ public class NewServer : MonoBehaviour
                 case MessageClass.TYPEOFMESSAGE.MessagesNeeded:
                     {
                         checkIfThereAreMessagesLost = false;
-                        if (messageReceived.messagesNeeded.Count > capMessagesNeeded)
+                        for(int i = 0; i < maxPlayers; i++)
                         {
-                            SendDisconnectionMessage(id);
+                            if (messageReceived.messagesNeeded.ContainsKey(i) && messageReceived.messagesNeeded[i].Count > capMessagesNeeded)
+                            {
+                                SendDisconnectionMessage(id);
+                            }
                         }
                         Dictionary<InfoOfBackupMessages, string> backupOfTheBackup;
                         lock (backupLock)
@@ -568,26 +561,23 @@ public class NewServer : MonoBehaviour
             int initialClients;
             int localClientsToDisconnect;
             DateTime disconnectionTime = DateTime.Now.AddMilliseconds(maxTimeout);
-            lock (disconnectionLock)
+
+            lock (guestLock)
             {
-                lock (guestLock)
-                {
-                    totalClientsToDisconnect = guests.Count;
-                    totalClientsToDisconnect -= guestsDisconnecting.Count;
-                }
-                initialClients = totalClientsToDisconnect;
-                localClientsToDisconnect = initialClients;
+                initialClients = guests.Count;
             }
+
+            localClientsToDisconnect = initialClients-guestsDisconnecting.Count;
+            
             while (localClientsToDisconnect > 0 && disconnectionTime >= DateTime.Now)
             {
                 for(int i = 0; i < initialClients; i++)
                 {
                     SendDisconnectionMessage(i);
                 }
-                lock (disconnectionLock)
-                {
-                    localClientsToDisconnect = totalClientsToDisconnect;
-                }
+
+                localClientsToDisconnect = initialClients - guestsDisconnecting.Count;
+                
             }
             
         }

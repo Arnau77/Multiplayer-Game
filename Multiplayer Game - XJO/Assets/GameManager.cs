@@ -14,6 +14,17 @@ public class GameManager : MonoBehaviour
 
     private NewClient client;
 
+
+    private void OnEnable()
+    {
+        CharacterScript.onFinishGame += StopCountDown;
+    }
+    private void OnDisable()
+    {
+        
+        CharacterScript.onFinishGame -= StopCountDown;
+    }
+
     private void Start()
     {
        
@@ -22,6 +33,8 @@ public class GameManager : MonoBehaviour
         if (client == null)
             return;
 
+        if (client.characterScripts.Count > 0)
+            return;
         for (int i = 0; i < client.positionsDic.Count; i++)
         {
             SpawnPlayer(i,client.positionsDic[i]);
@@ -60,6 +73,37 @@ public class GameManager : MonoBehaviour
             time -= 1;
             UIManager.onUpdateTimer?.Invoke(time);
         }
+
+        if(playersList[0].health > playersList[1].health)
+        {
+            if (client.clientID == playersList[0].ID)
+            {
+                CharacterScript.onFinishGame?.Invoke(true);
+            }
+            else
+            {
+
+                CharacterScript.onFinishGame?.Invoke(false);
+            }
+        }
+        else
+        {
+            if (client.clientID == playersList[1].ID)
+            {
+                CharacterScript.onFinishGame?.Invoke(true);
+            }
+            else
+            {
+
+                CharacterScript.onFinishGame?.Invoke(false);
+            }
+
+        }
+    }
+
+    public void StopCountDown(bool boolean)
+    {
+        StopCoroutine(TimeDown());
     }
 
     public void SpawnPlayer(int i, Vector3 pos)
