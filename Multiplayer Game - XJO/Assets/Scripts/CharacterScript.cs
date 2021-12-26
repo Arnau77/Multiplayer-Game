@@ -470,4 +470,11 @@ public class CharacterScript : MonoBehaviour
         }
     }
 
+    private void OnTriggerEnter(Collider other)
+    {
+        if(other.TryGetComponent(out IDamageable damageable))
+        {
+            damageable.RecieveDamage();
+        }
+    }
 }
