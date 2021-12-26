@@ -38,7 +38,7 @@ public class NewServer : MonoBehaviour
     private Thread serverSendThread;
     private Socket server;
     private bool startPlayed = false;
-    //private static int maxID = 0;
+
     [Space(10)]
     public int maxPlayers;
     private bool morePlayersAllowed = true;
@@ -84,19 +84,6 @@ public class NewServer : MonoBehaviour
             getterID = getterId;
         }
     }
-
-    //definition of who connects to the server
-    //public class ServerClient
-    //{
-    //    public EndPoint remoteEP;
-    //    public int clientID;
-
-    //    public ServerClient(EndPoint clientsocket)
-    //    {
-    //        clientID = maxID++;
-    //        remoteEP = clientsocket;
-    //    }
-    //}
 
     private void Start()
     {
@@ -175,29 +162,14 @@ public class NewServer : MonoBehaviour
             }
         }
 
-
-        //foreach (ServerClient g in guests) //g name of the server client
-        //{
-        //    if (!IsConnected(g.remoteEP)) //is the guest still connected?
-        //    {
-        //        g.remoteEP.Close();
-        //        disconnections.Add(g); //we add the guest to the disconnected list, maybe useful for a reconnection?
-        //        continue;
-        //    }
-        //    else //checking for messages from the guest
-        //    {
-        //        NetworkStream s = g.remoteEP.GetStream();
-        //        if (s.DataAvailable)
-        //        {
-        //            StreamReader reader = new StreamReader(s, true);
-        //            string data = reader.ReadLine();
-        //            if (data != null)
-        //            {
-        //                OnIncomingData(g, data);
-        //            }
-        //        }
-        //    }
-        //}
+        if (Input.GetKeyDown(KeyCode.M))
+        {
+            MessageClass message = new MessageClass(0, 0, MessageClass.TYPEOFMESSAGE.Disconnection, DateTime.Now);
+            lock (textLock)
+            {
+                textsToSend.Add(new TextWithID(message.Serialize(),0));
+            }
+        }
     }
 
 
@@ -334,7 +306,7 @@ public class NewServer : MonoBehaviour
                             if (unconfirmedGuests.Contains(id))
                             {
                                 unconfirmedGuests.Remove(id);
-                                if (unconfirmedGuests.Count == 0)
+                                if (unconfirmedGuests.Count == 0 && !morePlayersAllowed)
                                 {
                                     waitingGuests.Remove(-2);
                                     for (int i = 0; i < maxPlayers; i++)
@@ -549,63 +521,6 @@ public class NewServer : MonoBehaviour
             }
         }
     }
-    //private bool IsConnected(EndPoint g) //we call the guest again and we try to reach it
-    //{
-    //    try
-    //    {
-    //        if (g != null && g.Client != null && g.Client.Connected)
-    //        {
-    //            if (g.Client.Poll(0, SelectMode.SelectRead))
-    //            {
-    //                return !(g.Client.Receive(new byte[4], SocketFlags.Peek) == 0); //don't really understand how these lines work SORRY
-    //            }
-
-    //            return true;
-    //        }
-    //        else
-    //            return false;
-    //    }
-    //    catch
-    //    {
-    //        return false;
-    //    }
-    //}
-
-    //private void ServerListening()
-    //{
-    //    server.BeginAcceptTcpClient(AcceptTcpClient, server);
-    //}
-
-    //private void AcceptTcpClient(IAsyncResult ar) //we accept a client to connect to the server
-    //{
-    //    TcpListener listener = (TcpListener)ar.AsyncState;
-    //    guests.Add(new ServerClient(listener.EndAcceptTcpClient(ar))); //adding a client to the list
-    //    ServerListening();
-
-    //    //Send a message here to everyone to let know somebody has connected maybe?
-    //    Broadcast(guests[guests.Count - 1].clientName + "has connected", guests);
-    //}
-
-    //private void OnIncomingData(ServerClient g, string data)
-    //{
-    //    Debug.Log(g.clientName + " has sent the following data: " + data);
-    //}
-    //private void Broadcast(string data, List<ServerClient> cl)
-    //{
-    //    foreach (ServerClient g in cl)
-    //    {
-    //        try
-    //        {
-    //            StreamWriter writer = new StreamWriter(g.remoteEP.GetStream());
-    //            writer.WriteLine(data);
-    //            writer.Flush();
-    //        }
-    //        catch (Exception e)
-    //        {
-    //            Debug.Log("Write error : " + e.Message + "to client " + g.clientName);
-    //        }
-    //    }
-    //}
 
     private void OnDestroy()
     {
