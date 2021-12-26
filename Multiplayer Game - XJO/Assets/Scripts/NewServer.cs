@@ -565,7 +565,6 @@ public class NewServer : MonoBehaviour
             lock (guestLock)
             {
                 initialClients = guests.Count;
-                initialClients -= guestsDisconnecting.Count;
             }
 
             localClientsToDisconnect = initialClients-guestsDisconnecting.Count;
