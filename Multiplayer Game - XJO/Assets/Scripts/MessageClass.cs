@@ -246,14 +246,17 @@ public class MessageClass
                 listOfMessagesLost.Remove(idMessage);
                 fullListOfMessagesLost[index] = listOfMessagesLost;
             }
-            else
+            else if (idMessage > lastMessageID)
             {
                 listOfMessages[index] = idMessage;
                 bool enteredFor = false;
                 for(uint i = lastMessageID + 1; i < idMessage; i++)
                 {
-                    listOfMessagesLost.Add(i);
-                    enteredFor = true;
+                    if (!listOfMessagesLost.Contains(i))
+                    {
+                        listOfMessagesLost.Add(i);
+                        enteredFor = true;
+                    }
                 }
                 if (enteredFor)
                 {
@@ -279,6 +282,7 @@ public class MessageClass
         {
             messageToSend = new MessageClass(idMessage, message.playerID, MessageClass.TYPEOFMESSAGE.MessagesNeeded, System.DateTime.Now, fullListOfMessagesLost);
             messagesToSend.Add(messageToSend);
+            Debug.LogWarning(listOfMessagesLost.ToString());
         }
         messageToSend = new MessageClass(idMessage, message.playerID, MessageClass.TYPEOFMESSAGE.Acknowledgment, System.DateTime.Now, thereAreMessagesLost);
         messagesToSend.Add(messageToSend);
