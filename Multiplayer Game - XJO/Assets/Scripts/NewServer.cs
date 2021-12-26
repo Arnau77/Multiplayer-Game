@@ -21,6 +21,7 @@ public class NewServer : MonoBehaviour
     private List<EndPoint> guests; //keeps track of the connections
     private List<int> unconfirmedGuests;
     private List<int> waitingGuests;
+    private List<int> guestsDisconnecting;
     private List<Action> actions = new List<Action>();
     private List<TextWithID> textsToSend = new List<TextWithID>();
     private List<TextWithID> backupTexts = new List<TextWithID>();
@@ -42,6 +43,7 @@ public class NewServer : MonoBehaviour
     private bool disconnectedItself = true;
     private int totalClientsToDisconnect=0;
     private DateTime timerDisconnection;
+    public int maxTimeout = 5000;
 
     [Space(10)]
     public int maxPlayers;
@@ -57,6 +59,7 @@ public class NewServer : MonoBehaviour
     private int _lossThreshold = 0;
     private int _minJit = 0;
     private int _maxJit = 0;
+    public int capMessagesNeeded = 60;
 
     private bool serverconnected; //server started or not
 
@@ -104,6 +107,7 @@ public class NewServer : MonoBehaviour
         unconfirmedGuests = new List<int>();
         waitingGuests = new List<int>();
         waitingGuests.Add(-2);
+        guestsDisconnecting = new List<int>();
 
         server = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         serverListenThread = new Thread(ServerListenThread);
@@ -176,7 +180,7 @@ public class NewServer : MonoBehaviour
         IPEndPoint ipServer = new IPEndPoint(IPAddress.Parse("127.0.0.1"), port);
         server.Bind(ipServer);
 
-        byte[] buffer = new byte[100];
+        byte[] buffer = new byte[1000];
         EndPoint clientPoint = new IPEndPoint(IPAddress.Any, 0);
 
 
@@ -272,21 +276,36 @@ public class NewServer : MonoBehaviour
                     List<EndPoint> localsClients;
                     lock (guestLock)
                     {
-                        localsClients = new List<EndPoint>(guests);
+                        localsClients = guests;
+                    }
+                    if (id > -1 && !guestsDisconnecting.Contains(id))
+                    {
+                        guestsDisconnecting.Add(id);
+                        if (id == 0)
+                        {
+                            lock (actionLock)
+                            {
+                                actions.Add(() => playername1.SetActive(false));
+                            }
+                        }
+                        else if (id == 1)
+                        {
+                            lock (actionLock)
+                            {
+                                actions.Add(() => playername2.SetActive(false));
+                            }
+                        }
                     }
                     for (int i = 0; i < localsClients.Count; i++)
                     {
-                        if (i == id)
-                        {
-                            continue;
-                        }
                         lock (textLock)
                         {
-                            MessageClass message = new MessageClass(messageReceived.id, id, MessageClass.TYPEOFMESSAGE.Disconnection, DateTime.Now, MessageClass.INPUT.Attack);
+                            MessageClass message = new MessageClass(messageReceived.id, messageReceived.playerID, MessageClass.TYPEOFMESSAGE.Disconnection, DateTime.Now);
                             textsToSend.Add(new TextWithID(message.Serialize(), i));
                         }
                     }
                     localsClients.Clear();
+                    checkIfThereAreMessagesLost = false;
                     break;
                 case MessageClass.TYPEOFMESSAGE.Acknowledgment:
                     {
@@ -361,6 +380,10 @@ public class NewServer : MonoBehaviour
                 case MessageClass.TYPEOFMESSAGE.MessagesNeeded:
                     {
                         checkIfThereAreMessagesLost = false;
+                        if (messageReceived.messagesNeeded.Count > capMessagesNeeded)
+                        {
+                            SendDisconnectionMessage(id);
+                        }
                         Dictionary<InfoOfBackupMessages, string> backupOfTheBackup;
                         lock (backupLock)
                         {
@@ -474,6 +497,7 @@ public class NewServer : MonoBehaviour
                     backupTexts.Add(localTexts[i]);
                     continue;
                 }
+                buffer = new byte[1000];
                 buffer = Encoding.ASCII.GetBytes(localTexts[i].text);
                 server.SendTo(buffer, buffer.Length, SocketFlags.None, localClients[localTexts[i].id]);
             }
@@ -534,6 +558,7 @@ public class NewServer : MonoBehaviour
         {
             textsToSend.Add(new TextWithID(message.Serialize(), clientID));
         }
+        Thread.Sleep(50);
     }
 
     private void OnDestroy()
@@ -542,16 +567,18 @@ public class NewServer : MonoBehaviour
         {
             int initialClients;
             int localClientsToDisconnect;
+            DateTime disconnectionTime = DateTime.Now.AddMilliseconds(maxTimeout);
             lock (disconnectionLock)
             {
                 lock (guestLock)
                 {
                     totalClientsToDisconnect = guests.Count;
+                    totalClientsToDisconnect -= guestsDisconnecting.Count;
                 }
                 initialClients = totalClientsToDisconnect;
                 localClientsToDisconnect = initialClients;
             }
-            while (localClientsToDisconnect > 0)
+            while (localClientsToDisconnect > 0 && disconnectionTime >= DateTime.Now)
             {
                 for(int i = 0; i < initialClients; i++)
                 {
