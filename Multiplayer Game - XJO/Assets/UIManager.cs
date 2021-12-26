@@ -15,6 +15,7 @@ public class UIManager : MonoBehaviour
 
     public GameObject winText;
     public GameObject loseText;
+    public GameManager gameManager;
 
 
     [Header("Pause")]
@@ -22,6 +23,7 @@ public class UIManager : MonoBehaviour
     private void Start()
     {
         players = FindObjectsOfType<CharacterScript>().ToList();
+        gameManager = FindObjectOfType<GameManager>();
         for (int i = 0; i < players.Count; i++)
         {
             healthBars[i].fillAmount = players[i].health / 100;
@@ -67,6 +69,10 @@ public class UIManager : MonoBehaviour
 
     public void ShowFinalMessage(bool boolean)
     {
+        if (gameManager != null)
+        {
+            gameManager.StopCountDown(true);
+        }
         if (boolean)
         {
             winText.SetActive(true);
