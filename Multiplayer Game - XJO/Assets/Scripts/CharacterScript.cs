@@ -18,6 +18,7 @@ public class CharacterScript : MonoBehaviour
     private bool toAttack = false;
     private bool toWalk = false;
     private bool toBlock = false;
+    private bool toKnockBack = false;
     private bool idle = true;
     private Vector3 toWalkVector;
     private Vector3 lastVectorRecieved;
@@ -32,6 +33,7 @@ public class CharacterScript : MonoBehaviour
     private object walkLock = new object();
     private object idleLock = new object();
     private object blockLock = new object();
+    private object knockBackLock = new object();
     enum STATE
     {
         SEARCH_STATE,
@@ -174,6 +176,16 @@ public class CharacterScript : MonoBehaviour
                 idle = false;
                 animator.SetInteger("DIR", 0);
                 Debug.Log("TO IDLE");
+            }
+        }
+
+        lock (knockBackLock)
+        {
+            if (toKnockBack)
+            {
+                toKnockBack = false;
+                StartCoroutine(PushedBack(this));
+                this.ReceiveDamage();
             }
         }
 
@@ -370,6 +382,14 @@ public class CharacterScript : MonoBehaviour
         }
     }
 
+    public void ToKnockBack()
+    {
+        lock (knockBackLock)
+        {
+            toKnockBack = true;
+        }
+    }
+
     public void ReceiveDamage()
     {
         if (blocking)
@@ -398,9 +418,13 @@ public class CharacterScript : MonoBehaviour
         {
             if(c.gameObject.TryGetComponent(out CharacterScript character))
             {
-                character.ReceiveDamage();
-                Debug.Log("Hitted");
-                StartCoroutine(PushedBack(character));
+                if (client.clientID == ID)
+                {
+                    //character.ReceiveDamage();
+                    Debug.Log("Hitted");
+                    StartCoroutine(PushedBack(character));
+                    client.SendInputMessageToServer(MessageClass.INPUT.KnockBack);
+                }
             }
 
             if(c.gameObject.TryGetComponent(out IDamageable damageable))

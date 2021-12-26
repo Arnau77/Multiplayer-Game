@@ -18,7 +18,8 @@ public class MessageClass
         Move,
         Attack,
         Block,
-        Idle
+        Idle,
+        KnockBack
     }
 
     //public enum OBJECTUPDATE

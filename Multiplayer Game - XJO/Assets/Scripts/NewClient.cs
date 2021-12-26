@@ -230,6 +230,11 @@ public class NewClient : MonoBehaviour
                             {
                                 character.ToIdle();
                             }
+
+                            if(messageReceived.input == MessageClass.INPUT.KnockBack)
+                            {
+                                character.ToKnockBack();
+                            }
                         }
                         break;
                     case MessageClass.TYPEOFMESSAGE.Connection:
