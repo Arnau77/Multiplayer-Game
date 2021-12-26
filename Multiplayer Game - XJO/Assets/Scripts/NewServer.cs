@@ -178,7 +178,7 @@ public class NewServer : MonoBehaviour
         IPEndPoint ipServer = new IPEndPoint(IPAddress.Parse("127.0.0.1"), port);
         server.Bind(ipServer);
 
-        byte[] buffer = new byte[100];
+        byte[] buffer = new byte[1000];
         EndPoint clientPoint = new IPEndPoint(IPAddress.Any, 0);
 
 

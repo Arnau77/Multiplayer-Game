@@ -19,6 +19,7 @@ public class CharacterScript : MonoBehaviour
     private bool toWalk = false;
     private bool idle = true;
     private Vector3 toWalkVector;
+    private Vector3 lastVectorRecieved;
 
     [Header("Attack Info")]
     public Transform castDamagePoint;
@@ -135,8 +136,10 @@ public class CharacterScript : MonoBehaviour
         {
             if (toWalk)
             {
-                toWalk = false;
+                //toWalk = false;
+                toWalkVector = Vector3.Lerp(toWalkVector, lastVectorRecieved, Time.deltaTime * (lastVectorRecieved.magnitude/toWalkVector.magnitude)*5);
                 Walk(toWalkVector);
+                Debug.Log("To Walk");
             }
         }
         lock (idleLock)
@@ -145,6 +148,7 @@ public class CharacterScript : MonoBehaviour
             {
                 idle = false;
                 animator.SetInteger("DIR", 0);
+                Debug.Log("TO IDLE");
             }
         }
 
@@ -208,6 +212,8 @@ public class CharacterScript : MonoBehaviour
                     {
                         case INPUT_STATE.IN_IDLE:
                             currentState = STATE.IDLE;
+                            client.SendInputMessageToServer(MessageClass.INPUT.Idle);
+
                             break;
                         case INPUT_STATE.IN_HIT:
                             currentState = STATE.HIT;
@@ -222,6 +228,8 @@ public class CharacterScript : MonoBehaviour
                     {
                         case INPUT_STATE.IN_IDLE:
                             currentState = STATE.IDLE;
+                            client.SendInputMessageToServer(MessageClass.INPUT.Idle);
+
                             break;
                     }
                     break;
@@ -234,6 +242,8 @@ public class CharacterScript : MonoBehaviour
                                 return;
                             }
                             currentState = STATE.IDLE;
+                            client.SendInputMessageToServer(MessageClass.INPUT.Idle);
+
                             break;
                     }
                     break;
@@ -249,7 +259,6 @@ public class CharacterScript : MonoBehaviour
             
             case STATE.IDLE:
                 animator.SetInteger("DIR", 0);
-                client.SendInputMessageToServer(MessageClass.INPUT.Idle);
                 //animator.Play("Fighting Idle");
                 //animator.SetBool("A", false);
                 //animator.SetBool("D", false);
@@ -285,9 +294,16 @@ public class CharacterScript : MonoBehaviour
 
     public void Walk(Vector3 desiredPos)
     {
+        if (controller.transform.position.x > desiredPos.x)
+        {
+            animator.SetInteger("DIR", 1);
+        }
+        else
+        {
+            animator.SetInteger("DIR", -1);
 
+        }
         controller.transform.position = desiredPos;
-        animator.SetInteger("DIR", (int)dir.x);
         //if(input == MessageClass.INPUT.A)
         //{
         //    dir = new Vector3(-1, 0, 0);
@@ -311,7 +327,8 @@ public class CharacterScript : MonoBehaviour
         lock (walkLock)
         {
             toWalk = true;
-            toWalkVector = Vector3.Lerp(transform.position, vector, Time.deltaTime);
+            inputList.Add(INPUT_STATE.IN_WALK);
+            toWalkVector = lastVectorRecieved = vector;
         }
     }
 

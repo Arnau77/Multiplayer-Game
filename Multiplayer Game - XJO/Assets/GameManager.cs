@@ -19,6 +19,9 @@ public class GameManager : MonoBehaviour
        
         StartCoroutine(TimeDown());
         client = FindObjectOfType<NewClient>();
+        if (client == null)
+            return;
+
         for (int i = 0; i < client.positionsDic.Count; i++)
         {
             SpawnPlayer(i,client.positionsDic[i]);
@@ -31,7 +34,9 @@ public class GameManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             onPauseGame?.Invoke();
-        }   
+        }
+        if (playersList.Count <= 0)
+            return;
 
         if(playersList[0].transform.position.x > playersList[1].transform.position.x)
         {
