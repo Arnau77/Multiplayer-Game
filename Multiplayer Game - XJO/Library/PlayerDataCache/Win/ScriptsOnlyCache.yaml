@@ -14,8 +14,10 @@ ScriptsOnlyBuild:
     UnityEditor.Graphs.dll:
     - UnityEditor.Graphs.AnimationBlendTree.Graph
     - UnityEditor.Graphs.AnimationBlendTree.GraphGUI
+    - UnityEditor.Graphs.AnimationStateMachine.AnyStateNode
     - UnityEditor.Graphs.AnimationStateMachine.Graph
     - UnityEditor.Graphs.AnimationStateMachine.GraphGUI
+    - UnityEditor.Graphs.AnimationStateMachine.StateNode
     - UnityEditor.Graphs.AnimatorControllerTool
     UnityEditor.TestRunner.dll:
     - UnityEditor.TestTools.TestRunner.Api.CallbacksHolder
@@ -30,7 +32,6 @@ ScriptsOnlyBuild:
     - UnityEngine.UI.Image
     - UnityEngine.UI.LayoutElement
     - UnityEngine.UI.RectMask2D
-    - UnityEngine.UI.Text
     - UnityEngine.UI.Toggle
   sceneClasses:
     Assets/Scenes/Server.unity:
@@ -49,6 +50,8 @@ ScriptsOnlyBuild:
     - Class: 49
       Script: {instanceID: 0}
     - Class: 81
+      Script: {instanceID: 0}
+    - Class: 89
       Script: {instanceID: 0}
     - Class: 104
       Script: {instanceID: 0}
@@ -70,8 +73,6 @@ ScriptsOnlyBuild:
       Script: {instanceID: 1780}
     - Class: 114
       Script: {instanceID: 2028}
-    - Class: 114
-      Script: {instanceID: 2038}
     - Class: 114
       Script: {instanceID: 2322}
     - Class: 114
@@ -119,7 +120,7 @@ ScriptsOnlyBuild:
     className: PanelRaycaster
   - hash:
       serializedVersion: 2
-      Hash: e2b2302dcce0801d7c7427f43e477b67
+      Hash: 3f2b82fc78b6ebaee926ce05ae1244fb
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: NewServer
